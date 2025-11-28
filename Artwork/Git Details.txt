@@ -1,0 +1,6 @@
+git config --global user.name "Billy-Beanbag"
+git config --global user.email "philip@beerclub.co.uk"
+
+https://github.com/billy-Beanbag/buddybug-bedtime-stories.git
+
+C:\Users\You\Documents\buddybug
