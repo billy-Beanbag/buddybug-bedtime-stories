@@ -6,8 +6,25 @@ __pycache__/
 
 # Virtual env
 .venv/
+.venv-agent/
 venv/
 env/
+
+# Secrets & env (never commit)
+.env
+.env.local
+.env.*.local
+!.env.example
+!.env.local.example
+*important*codes*
+*passwords*
+
+# Database (local dev)
+*.db
+*.localtest.db
+
+# Storage (local uploads)
+storage/
 
 # Editor / OS
 .vscode/
@@ -16,8 +33,9 @@ env/
 .DS_Store
 Thumbs.db
 
-# Node / frontend build (if you ever add it)
+# Node / frontend build
 node_modules/
+.next/
 dist/
 build/
 

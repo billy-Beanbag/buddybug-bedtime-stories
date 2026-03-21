@@ -1,0 +1,30 @@
+[
+  {
+    "name": "Verity hero sheet",
+    "reference_type": "character_sheet",
+    "target_type": "character",
+    "target_name": "Verity",
+    "artwork_path": "buddybug.png",
+    "prompt_notes": "Use this as the anchor for Verity's face shape, hair colour, and calm bedtime expression.",
+    "language": "en",
+    "is_active": true
+  },
+  {
+    "name": "Daphne hero sheet",
+    "reference_type": "character_sheet",
+    "target_type": "character",
+    "target_name": "Daphne",
+    "artwork_path": "buddybug-quad.png",
+    "prompt_notes": "Keep Daphne's black-and-tan dachshund colouring, red collar, and playful expression on-model.",
+    "language": "en",
+    "is_active": true
+  },
+  {
+    "name": "Global bedtime style board",
+    "reference_type": "style_reference",
+    "artwork_path": "all-characters.png",
+    "prompt_notes": "Warm painterly finish, premium storybook detail, soft eyes, and gentle golden bedtime lighting.",
+    "language": "en",
+    "is_active": true
+  }
+]

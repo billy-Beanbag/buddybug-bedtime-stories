@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Buddybug maskable icon">
+  <rect width="512" height="512" fill="#c7d2fe" />
+  <circle cx="320" cy="160" r="72" fill="#fef3c7" />
+  <path d="M330 102a66 66 0 1 0 34 124 78 78 0 1 1-34-124Z" fill="#fcd34d" opacity="0.85" />
+  <ellipse cx="256" cy="298" rx="124" ry="102" fill="#312e81" />
+  <ellipse cx="256" cy="298" rx="58" ry="92" fill="#a5b4fc" />
+  <circle cx="214" cy="276" r="14" fill="#fff" />
+  <circle cx="298" cy="276" r="14" fill="#fff" />
+  <path d="M196 228c-14-22-38-34-65-36" fill="none" stroke="#312e81" stroke-linecap="round" stroke-width="18" />
+  <path d="M316 228c14-22 38-34 65-36" fill="none" stroke="#312e81" stroke-linecap="round" stroke-width="18" />
+  <path d="M230 330c22 26 40 38 52 38 12 0 30-12 52-38" fill="none" stroke="#312e81" stroke-linecap="round" stroke-width="14" />
+</svg>

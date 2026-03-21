@@ -1,0 +1,46 @@
+# Buddybug Backend - Render Blueprint
+# Connect this repo in Render Dashboard: New > Blueprint
+# Then add environment variables in the Dashboard (see DEPLOYMENT.md)
+
+databases:
+  - name: buddybug-db
+    databaseName: buddybug
+    user: buddybug
+    plan: free
+
+services:
+  - type: web
+    name: buddybug-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: buddybug-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: APP_ENV
+        value: production
+      - key: DEBUG
+        value: "false"
+      # Add these in Render Dashboard after first deploy:
+      # CORS_ALLOW_ORIGINS = https://your-app.vercel.app,https://your-app-*.vercel.app
+      # STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PRICE_ID_PREMIUM_MONTHLY
+      # STRIPE_SUCCESS_URL, STRIPE_CANCEL_URL (use your Vercel URL)
+      - key: CORS_ALLOW_ORIGINS
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_PRICE_ID_PREMIUM_MONTHLY
+        sync: false
+      - key: STRIPE_SUCCESS_URL
+        sync: false
+      - key: STRIPE_CANCEL_URL
+        sync: false
+      - key: STORAGE_PUBLIC_BASE_URL
+        sync: false
