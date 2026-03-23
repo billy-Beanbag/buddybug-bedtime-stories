@@ -57,6 +57,7 @@ Deploy Buddybug to the internet using **GitHub**, **Vercel** (frontend), **Rende
    | Variable | Value |
    |----------|-------|
    | `CORS_ALLOW_ORIGINS` | `https://your-app.vercel.app` *(see Step 3 – add after Vercel deploy)* |
+   | `CORS_ALLOW_ORIGIN_REGEX` | *(optional)* `^https://.*\.vercel\.app$` — matches all Vercel preview + production URLs on `*.vercel.app` |
    | `STRIPE_SECRET_KEY` | `sk_test_...` from [Stripe Dashboard → Developers → API keys](https://dashboard.stripe.com/test/apikeys) |
    | `STRIPE_WEBHOOK_SECRET` | *(add after Step 4)* |
    | `STRIPE_PRICE_ID_PREMIUM_MONTHLY` | `price_...` from Stripe Products/Prices |
@@ -65,8 +66,9 @@ Deploy Buddybug to the internet using **GitHub**, **Vercel** (frontend), **Rende
    | `STORAGE_PUBLIC_BASE_URL` | `https://buddybug-api.onrender.com` *(your Render service URL)* |
 
 7. For `CORS_ALLOW_ORIGINS`, include all origins that will call the API:
-   - Production: `https://your-app.vercel.app`
-   - Preview deploys: `https://your-app-*.vercel.app` (Render supports wildcards in some cases; if not, add each preview URL manually or use a broader pattern)
+   - Production: `https://your-app.vercel.app` (no trailing slash; do not wrap in quotes)
+   - Preview deploys: either list each `https://…vercel.app` URL, **or** set `CORS_ALLOW_ORIGIN_REGEX` to `^https://.*\.vercel\.app$` (covers previews and production on Vercel).
+   - **Environment groups:** variables in a group apply only after you **link** the group on **`buddybug-api` → Environment → Linked Environment Groups**, or copy the same keys onto the service directly.
 
 8. **Trigger a manual redeploy** after setting variables
 

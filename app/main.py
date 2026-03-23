@@ -10,7 +10,14 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.staticfiles import StaticFiles
 from sqlmodel import Session
 
-from app.config import APP_NAME, CORS_ALLOW_ORIGINS, DEBUG, PROJECT_ROOT, STORAGE_LOCAL_BASE_PATH
+from app.config import (
+    APP_NAME,
+    CORS_ALLOW_ORIGIN_REGEX,
+    CORS_ALLOW_ORIGINS,
+    DEBUG,
+    PROJECT_ROOT,
+    STORAGE_LOCAL_BASE_PATH,
+)
 from app.database import engine, ensure_sqlite_schema_compatibility, get_session, required_tables_exist
 from app.errors import http_exception_handler, unhandled_exception_handler
 from app.logging_config import configure_logging
@@ -148,10 +155,16 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title=APP_NAME, debug=DEBUG, lifespan=lifespan)
+logger.info(
+    "CORS allow_origins count=%s regex=%s",
+    len(CORS_ALLOW_ORIGINS),
+    repr(CORS_ALLOW_ORIGIN_REGEX) if CORS_ALLOW_ORIGIN_REGEX else None,
+)
 app.add_middleware(RequestContextMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ALLOW_ORIGINS,
+    allow_origin_regex=CORS_ALLOW_ORIGIN_REGEX,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -22,6 +22,32 @@ def _get_int_env(name: str, default: int) -> int:
     return int(raw_value)
 
 
+def _normalize_cors_origin(value: str) -> str:
+    """Strip whitespace and optional wrapping quotes (common when pasting into dashboards)."""
+    origin = value.strip()
+    if len(origin) >= 2 and origin[0] == origin[-1] and origin[0] in {'"', "'"}:
+        origin = origin[1:-1].strip()
+    return origin
+
+
+def _parse_cors_allow_origins(raw: str) -> list[str]:
+    origins: list[str] = []
+    for part in raw.split(","):
+        o = _normalize_cors_origin(part)
+        if o:
+            origins.append(o)
+    return origins
+
+
+def _parse_cors_allow_origin_regex(raw: str | None) -> str | None:
+    if raw is None or not raw.strip():
+        return None
+    pattern = raw.strip()
+    if len(pattern) >= 2 and pattern.startswith("/") and pattern.endswith("/"):
+        pattern = pattern[1:-1].strip()
+    return pattern or None
+
+
 @dataclass(frozen=True)
 class Settings:
     app_name: str
@@ -44,6 +70,7 @@ class Settings:
     terms_version: str
     privacy_policy_version: str
     cors_allow_origins: list[str]
+    cors_allow_origin_regex: str | None
     storage_backend: str
     storage_local_base_path: str
     storage_public_base_url: str
@@ -99,11 +126,8 @@ def get_settings() -> Settings:
         ),
         terms_version=os.getenv("TERMS_VERSION", "2026-01"),
         privacy_policy_version=os.getenv("PRIVACY_POLICY_VERSION", "2026-01"),
-        cors_allow_origins=[
-            origin.strip()
-            for origin in os.getenv("CORS_ALLOW_ORIGINS", default_cors_origins).split(",")
-            if origin.strip()
-        ],
+        cors_allow_origins=_parse_cors_allow_origins(os.getenv("CORS_ALLOW_ORIGINS", default_cors_origins)),
+        cors_allow_origin_regex=_parse_cors_allow_origin_regex(os.getenv("CORS_ALLOW_ORIGIN_REGEX")),
         storage_backend=os.getenv("STORAGE_BACKEND", "local"),
         storage_local_base_path=os.getenv("STORAGE_LOCAL_BASE_PATH", str(PROJECT_ROOT / "storage")),
         storage_public_base_url=os.getenv("STORAGE_PUBLIC_BASE_URL", "http://localhost:8000"),
@@ -149,6 +173,7 @@ STRIPE_CANCEL_URL = settings.stripe_cancel_url
 TERMS_VERSION = settings.terms_version
 PRIVACY_POLICY_VERSION = settings.privacy_policy_version
 CORS_ALLOW_ORIGINS = settings.cors_allow_origins
+CORS_ALLOW_ORIGIN_REGEX = settings.cors_allow_origin_regex
 STORAGE_BACKEND = settings.storage_backend
 STORAGE_LOCAL_BASE_PATH = settings.storage_local_base_path
 STORAGE_PUBLIC_BASE_URL = settings.storage_public_base_url
