@@ -1999,6 +1999,7 @@ export interface StoryDraftReviewRead {
   approved_text: string | null;
   review_status: string;
   review_notes: string | null;
+  content_lane_key?: string | null;
   read_time_minutes: number;
   generation_source: string;
   created_at: string;

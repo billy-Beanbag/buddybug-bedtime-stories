@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
@@ -63,7 +63,7 @@ function enrichIllustrations(
   });
 }
 
-export default function AdminIllustrationsPage() {
+function AdminIllustrationsPageContent() {
   const { token } = useAuth();
   const searchParams = useSearchParams();
   const draftIdFilter = searchParams.get("draftId");
@@ -260,5 +260,13 @@ export default function AdminIllustrationsPage() {
         onUpdated={loadIllustrations}
       />
     </div>
+  );
+}
+
+export default function AdminIllustrationsPage() {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <AdminIllustrationsPageContent />
+    </Suspense>
   );
 }

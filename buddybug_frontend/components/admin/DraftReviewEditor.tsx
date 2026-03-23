@@ -38,6 +38,7 @@ export function DraftReviewEditor({
       setFullText(response.full_text);
       setApprovedText(response.approved_text || "");
       setReviewNotes(response.review_notes || "");
+      setContentLaneKey(response.content_lane_key || "bedtime_3_7");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load draft");
     } finally {

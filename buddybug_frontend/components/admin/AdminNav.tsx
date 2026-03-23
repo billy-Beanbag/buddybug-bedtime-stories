@@ -7,7 +7,9 @@ import { usePathname } from "next/navigation";
 import { AdminCommandPalette } from "@/components/admin/AdminCommandPalette";
 import { useFeatureFlags } from "@/context/FeatureFlagsContext";
 
-const primaryAdminLinks = [
+type AdminLink = { href: string; label: string; flagKey?: string };
+
+const primaryAdminLinks: AdminLink[] = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/workflow", label: "Workflow" },
   { href: "/admin/ideas", label: "Ideas" },
@@ -17,7 +19,7 @@ const primaryAdminLinks = [
   { href: "/admin/illustrations", label: "Image Queue" },
 ];
 
-const secondaryAdminLinks = [
+const secondaryAdminLinks: AdminLink[] = [
   { href: "/admin/search", label: "Search Console" },
   { href: "/admin/editorial", label: "Editorial", flagKey: "editorial_tools_enabled" },
   { href: "/admin/story-quality", label: "Story Quality" },

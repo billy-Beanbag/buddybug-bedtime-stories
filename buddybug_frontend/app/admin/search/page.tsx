@@ -1,10 +1,11 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { AdminCommandPalette } from "@/components/admin/AdminCommandPalette";
 
-export default function AdminSearchPage() {
+function AdminSearchPageContent() {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
 
@@ -18,5 +19,13 @@ export default function AdminSearchPage() {
       </section>
       <AdminCommandPalette embedded initialQuery={initialQuery} />
     </div>
+  );
+}
+
+export default function AdminSearchPage() {
+  return (
+    <Suspense fallback={<div className="p-6">Loading...</div>}>
+      <AdminSearchPageContent />
+    </Suspense>
   );
 }

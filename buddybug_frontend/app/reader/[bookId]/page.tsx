@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 
 import { EmptyState } from "@/components/EmptyState";
 import { LoadingState } from "@/components/LoadingState";
@@ -125,7 +125,7 @@ function buildOfflineNarration(record: OfflineBookPackageRecord): ReaderNarratio
   };
 }
 
-export default function ReaderPage() {
+function ReaderPageContent() {
   const params = useParams<{ bookId: string }>();
   const searchParams = useSearchParams();
   const { user, token, isAuthenticated, isEditor, isLoading: authLoading } = useAuth();
@@ -1397,5 +1397,13 @@ export default function ReaderPage() {
       ) : null}
 
     </div>
+  );
+}
+
+export default function ReaderPage() {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <ReaderPageContent />
+    </Suspense>
   );
 }

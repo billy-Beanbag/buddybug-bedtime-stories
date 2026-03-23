@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
@@ -17,7 +17,7 @@ const PROVIDER_OPTIONS = [
   { value: "openai", label: "Live AI image" },
 ];
 
-export default function AdminStoryPagesPage() {
+function AdminStoryPagesPageContent() {
   const { token } = useAuth();
   const searchParams = useSearchParams();
   const draftIdFilter = searchParams.get("draftId");
@@ -314,5 +314,13 @@ export default function AdminStoryPagesPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function AdminStoryPagesPage() {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <AdminStoryPagesPageContent />
+    </Suspense>
   );
 }

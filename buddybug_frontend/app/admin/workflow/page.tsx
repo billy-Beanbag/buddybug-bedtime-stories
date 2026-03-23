@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useEffect, useState } from "react";
+import { Suspense, useMemo, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { EmptyState } from "@/components/EmptyState";
 import { LoadingState } from "@/components/LoadingState";
 import { useAuth } from "@/context/AuthContext";
-import { apiDelete, apiGet, apiPost } from "@/lib/api";
+import { ApiError, apiDelete, apiGet, apiPost } from "@/lib/api";
 import { ADMIN_PRIMARY_BUTTON, ADMIN_SECONDARY_BUTTON } from "@/lib/admin-styles";
 import type {
   AdminBookSummary,
@@ -322,7 +322,7 @@ function StageBlock({
   );
 }
 
-export default function AdminWorkflowPage() {
+function AdminWorkflowPageContent() {
   const { token } = useAuth();
   const searchParams = useSearchParams();
   const draftIdFilter = searchParams.get("draftId");
@@ -344,7 +344,7 @@ export default function AdminWorkflowPage() {
   const [nextStepRecordKey, setNextStepRecordKey] = useState<string | null>(null);
   const [nextStepType, setNextStepType] = useState<"preview" | null>(null);
   const [query, setQuery] = useState("");
-  const [view, setView] = useState<"all" | "needs_action" | "published">("needs_action");
+  const [view, setView] = useState<"all" | "needs_action" | "published" | "selected_only">("needs_action");
 
   async function loadWorkflow(options?: { silent?: boolean }) {
     if (!token) {
@@ -419,6 +419,10 @@ export default function AdminWorkflowPage() {
         if (ideaStatus === "idea_pending" || ideaStatus === "idea_rejected") {
           return false;
         }
+      }
+      if (view === "selected_only") {
+        const ideaStatus = record.idea?.status;
+        return ideaStatus === "idea_selected" || ideaStatus === "converted_to_draft";
       }
       if (view === "published") {
         return isPublished(record.book);
@@ -1034,5 +1038,13 @@ export default function AdminWorkflowPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function AdminWorkflowPage() {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <AdminWorkflowPageContent />
+    </Suspense>
   );
 }

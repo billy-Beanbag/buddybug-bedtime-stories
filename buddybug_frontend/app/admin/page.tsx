@@ -13,7 +13,9 @@ import { apiGet } from "@/lib/api";
 import { ADMIN_CARD_HOVER } from "@/lib/admin-styles";
 import type { AdminNextActionsResponse, PipelineCountsResponse } from "@/lib/types";
 
-const primaryQuickLinks = [
+type QuickLink = { href: string; label: string; flagKey?: string };
+
+const primaryQuickLinks: QuickLink[] = [
   { href: "/admin/workflow", label: "Workflow" },
   { href: "/admin/ideas", label: "Ideas" },
   { href: "/admin/drafts", label: "Drafts" },
@@ -22,7 +24,7 @@ const primaryQuickLinks = [
   { href: "/admin/illustrations", label: "Image Queue" },
 ];
 
-const secondaryQuickLinks = [
+const secondaryQuickLinks: QuickLink[] = [
   { href: "/admin/search", label: "Search Console" },
   { href: "/admin/editorial", label: "Editorial", flagKey: "editorial_tools_enabled" },
   { href: "/admin/story-quality", label: "Story Quality" },
