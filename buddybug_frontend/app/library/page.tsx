@@ -121,12 +121,15 @@ export default function LibraryPage() {
   useEffect(() => {
     async function loadBooks() {
       try {
+        const childProfileIdForRequest = isAuthenticated && token ? selectedChildProfile?.id : undefined;
         const [data, recommendations] = await Promise.all([
           apiGet<ReaderBookSummary[]>("/reader/books", {
+            token,
             query: {
               language: effectiveLanguage,
               age_band: effectiveAgeBand,
-              child_profile_id: selectedChildProfile?.id,
+              // Backend requires auth when `child_profile_id` is provided.
+              child_profile_id: childProfileIdForRequest,
             },
           }),
           isAuthenticated
