@@ -98,14 +98,17 @@ async function request<T>(
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
+    // Only set JSON Content-Type when there is a body. Sending it on GET triggers an
+    // extra CORS preflight; anonymous reads (e.g. library) can stay "simple" without it.
+    const headers: Record<string, string> = {
+      ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+      ...(options?.token ? { Authorization: `Bearer ${options.token}` } : {}),
+      ...(options?.headers ?? {}),
+    };
     const response = await fetch(buildUrl(path, options?.query), {
       method,
       signal: controller.signal,
-      headers: {
-        "Content-Type": "application/json",
-        ...(options?.token ? { Authorization: `Bearer ${options.token}` } : {}),
-        ...(options?.headers ?? {}),
-      },
+      headers,
       body: body === undefined ? undefined : JSON.stringify(body),
     });
     return await parseResponse<T>(response);
