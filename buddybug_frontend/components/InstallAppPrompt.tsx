@@ -23,9 +23,15 @@ export function InstallAppPrompt() {
     if (typeof window === "undefined") {
       return;
     }
-    setDismissed(window.localStorage.getItem(INSTALL_DISMISS_KEY) === "true");
+    const isDismissed = window.localStorage.getItem(INSTALL_DISMISS_KEY) === "true";
+    setDismissed(isDismissed);
 
     function handleBeforeInstallPrompt(event: Event) {
+      // If the user already dismissed this prompt, we should not prevent the native
+      // banner (otherwise Chrome logs a warning because `prompt()` will never be called).
+      if (isDismissed) {
+        return;
+      }
       event.preventDefault();
       setDeferredPrompt(event as BeforeInstallPromptEvent);
     }
