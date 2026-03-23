@@ -31,7 +31,9 @@ export default function AdminIdeasPage() {
         "/story-ideas/generate",
         {
           count: 5,
-          age_band: generateRoute === ADVENTURE_LANE ? "8-12" : "3-7",
+          // Must match ContentLane.age_band in the API. Both canonical lanes use 3–7 today; adventure is still
+          // story_adventures_8_12 (lane key) with age_band 3–7 in seed until 8–12 is enabled server-side.
+          age_band: "3-7",
           content_lane_key: generateRoute,
           bedtime_only: generateRoute === BEDTIME_LANE,
         },
@@ -195,7 +197,7 @@ export default function AdminIdeasPage() {
                         type="button"
                         onClick={() => handleIdeaAction(idea.id, "select", ADVENTURE_LANE)}
                         className="rounded-2xl bg-amber-50 px-4 py-2 text-sm font-medium text-amber-800"
-                        title="Select as Adventure story (richer plots, 8–12)"
+                        title="Select as Adventure story (richer plots; same 3–7 age band as backend content lane)"
                       >
                         Select as Adventure
                       </button>
