@@ -146,6 +146,12 @@ def _build_live_prompt(package: IllustrationGenerationPackage) -> str:
 
     sections = [
         sanitized_positive_prompt,
+        (
+            "Page narrative context for scene understanding only:\n"
+            f"{package.page_text.strip()}"
+            if package.page_text.strip()
+            else ""
+        ),
         "Use any narrative text only as scene context. Do not render any words or lettering inside the image.",
         _quality_reference_prompt(),
         _rendering_requirements(),
@@ -308,6 +314,7 @@ def _generate_live_image(
         client = httpx.Client(timeout=ILLUSTRATION_GENERATION_TIMEOUT_SECONDS)
 
     assert client is not None
+    response: httpx.Response | None = None
     try:
         reference_inputs: list[dict[str, str]] = []
         for image_url in list(reference_image_urls)[:MAX_REFERENCE_IMAGES]:
@@ -347,6 +354,24 @@ def _generate_live_image(
             headers=headers,
             json=payload,
         )
+        if use_reference_edits and response.status_code == 400:
+            logger.warning(
+                "Live image edit request returned 400; retrying without reference images: model=%s context=%s",
+                ILLUSTRATION_GENERATION_MODEL,
+                debug_context,
+            )
+            fallback_payload = {
+                "model": ILLUSTRATION_GENERATION_MODEL,
+                "prompt": prompt,
+                "size": size,
+                "quality": "high",
+                "output_format": "png",
+            }
+            response = client.post(
+                _images_generation_url(),
+                headers=headers,
+                json=fallback_payload,
+            )
         response.raise_for_status()
         parsed = response.json()
         if ILLUSTRATION_GENERATION_DEBUG:

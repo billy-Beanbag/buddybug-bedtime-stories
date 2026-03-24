@@ -106,10 +106,8 @@ export function IllustrationQueueList({
     setMessage(null);
     setError(null);
     try {
-      setMessage("Rejecting the current illustration and saving your feedback...");
-      await apiPost(`/illustrations/${illustration.id}/reject`, { generation_notes: feedback }, { token });
       if (regenerate) {
-        setMessage("Feedback saved. Requesting a replacement illustration now...");
+        setMessage("Requesting a replacement illustration before rejecting the current version...");
         await apiPost<IllustrationGenerateResponse>(
           "/illustrations/generate",
           {
@@ -118,10 +116,14 @@ export function IllustrationQueueList({
           },
           { token, timeoutMs: 180_000 },
         );
+        setMessage("Replacement generated. Marking the previous version as rejected...");
+      } else {
+        setMessage("Rejecting the current illustration and saving your feedback...");
       }
+      await apiPost(`/illustrations/${illustration.id}/reject`, { generation_notes: feedback }, { token });
       setMessage(
         regenerate
-          ? "Illustration rejected. A replacement has been requested and the queue is refreshing."
+          ? "Replacement generated and the previous illustration was rejected. Refreshing the queue."
           : "Illustration rejected.",
       );
       setExpandedRejectId(null);
