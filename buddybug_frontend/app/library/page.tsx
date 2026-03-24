@@ -36,7 +36,7 @@ export default function LibraryPage() {
   const { hasPremiumAccess, isAuthenticated, token, user } = useAuth();
   const { selectedChildProfile, isLoading: childProfilesLoading } = useChildProfiles();
   const { isEnabled } = useFeatureFlags();
-  const { resolvedControls } = useParentalControls();
+  const { resolvedControls, isLoading: parentalControlsLoading } = useParentalControls();
   const { locale, t } = useLocale();
   const [books, setBooks] = useState<ReaderBookSummary[]>([]);
   const [recommended, setRecommended] = useState<RecommendedBookScore[]>([]);
@@ -120,7 +120,7 @@ export default function LibraryPage() {
 
   useEffect(() => {
     async function loadBooks() {
-      if (isAuthenticated && childProfilesLoading) {
+      if (isAuthenticated && (childProfilesLoading || parentalControlsLoading)) {
         return;
       }
       try {
@@ -173,7 +173,15 @@ export default function LibraryPage() {
     }
 
     void loadBooks();
-  }, [childProfilesLoading, effectiveAgeBand, effectiveLanguage, isAuthenticated, selectedChildProfile?.id, token]);
+  }, [
+    childProfilesLoading,
+    effectiveAgeBand,
+    effectiveLanguage,
+    isAuthenticated,
+    parentalControlsLoading,
+    selectedChildProfile?.id,
+    token,
+  ]);
 
   useEffect(() => {
     if (!recommended.length) {
@@ -191,7 +199,7 @@ export default function LibraryPage() {
     );
   }, [effectiveLanguage, isAuthenticated, recommended, selectedChildProfile?.id, token, user]);
 
-  if (loading || (isAuthenticated && childProfilesLoading)) {
+  if (loading || (isAuthenticated && (childProfilesLoading || parentalControlsLoading))) {
     return <LoadingState message="Loading published books..." />;
   }
 
@@ -206,7 +214,9 @@ export default function LibraryPage() {
         description={
           selectedAgeBand === "all"
             ? selectedChildProfile
-              ? `No published stories are available yet for ${selectedChildProfile.display_name}.`
+              ? resolvedControls?.bedtime_mode_enabled
+                ? `No published stories are currently visible for ${selectedChildProfile.display_name}. Bedtime mode or parental controls may be hiding adventure stories.`
+                : `No published stories are available yet for ${selectedChildProfile.display_name}.`
               : "Once books are published from the backend workflow, they will appear here."
             : `No published ${selectedAgeBand} stories are available yet.`
         }
