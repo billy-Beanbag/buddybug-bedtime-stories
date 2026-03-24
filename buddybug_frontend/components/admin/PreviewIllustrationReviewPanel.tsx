@@ -82,7 +82,7 @@ function NoLinkedStoryPageState({
     setRebuilding(true);
     setError(null);
     try {
-      await apiPost(`/editorial/story-drafts/${storyDraftId}/build-preview`, undefined, { token });
+      await apiPost(`/editorial/story-drafts/${storyDraftId}/build-preview`, undefined, { token, timeoutMs: 60_000 });
       await onPreviewUpdated();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to rebuild preview");
@@ -224,7 +224,7 @@ export function PreviewIllustrationReviewPanel({
     if (!token || !storyPage) {
       return;
     }
-    await apiPost(`/editorial/story-drafts/${storyPage.story_draft_id}/build-preview`, undefined, { token });
+    await apiPost(`/editorial/story-drafts/${storyPage.story_draft_id}/build-preview`, undefined, { token, timeoutMs: 60_000 });
     await Promise.all([loadReviewState(), onPreviewUpdated()]);
   }
 
@@ -236,7 +236,7 @@ export function PreviewIllustrationReviewPanel({
     setMessage(null);
     setError(null);
     try {
-      await apiPost(`/illustrations/${latestIllustration.id}/approve`, undefined, { token });
+      await apiPost(`/illustrations/${latestIllustration.id}/approve`, undefined, { token, timeoutMs: 60_000 });
       await rebuildPreview();
       setMessage("Illustration approved and preview refreshed.");
     } catch (err) {
@@ -261,22 +261,21 @@ export function PreviewIllustrationReviewPanel({
     setMessage(null);
     setError(null);
     try {
-      if (latestIllustration) {
-        await apiPost(
-          `/illustrations/${latestIllustration.id}/reject`,
-          { generation_notes: combinedFeedback },
-          { token },
-        );
-      }
       if (regenerate || !latestIllustration) {
         await apiPost(
           "/illustrations/generate",
           {
             story_page_id: storyPageId,
-            provider: latestIllustration?.provider === "manual_upload" ? undefined : latestIllustration?.provider,
             generation_notes: combinedFeedback,
           },
-          { token },
+          { token, timeoutMs: 180_000 },
+        );
+      }
+      if (latestIllustration) {
+        await apiPost(
+          `/illustrations/${latestIllustration.id}/reject`,
+          { generation_notes: combinedFeedback },
+          { token, timeoutMs: 60_000 },
         );
       }
       await rebuildPreview();

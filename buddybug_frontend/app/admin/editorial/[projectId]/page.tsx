@@ -297,7 +297,7 @@ export default function EditorialProjectDetailPage() {
               const builtPreview = await apiPost<PreviewBookResponse>(
                 `/editorial/story-drafts/${draftState.draft.id}/build-preview`,
                 undefined,
-                { token },
+                { token, timeoutMs: 60_000 },
               );
               setPreview(builtPreview);
               await loadProjectState();

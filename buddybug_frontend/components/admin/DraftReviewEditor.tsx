@@ -148,12 +148,12 @@ export function DraftReviewEditor({
           story_draft_id: updatedDraft.id,
           page_ids: pagesNeedingImages.map((page) => page.id),
         },
-        { token, timeoutMs: 30000 },
+        { token, timeoutMs: 180_000 },
       );
     }
 
     setMessage("Building the preview book...");
-    await apiPost(`/editorial/story-drafts/${updatedDraft.id}/build-preview`, undefined, { token, timeoutMs: 30000 });
+    await apiPost(`/editorial/story-drafts/${updatedDraft.id}/build-preview`, undefined, { token, timeoutMs: 60_000 });
 
     setMessage(
       pagesNeedingImages.length > 0

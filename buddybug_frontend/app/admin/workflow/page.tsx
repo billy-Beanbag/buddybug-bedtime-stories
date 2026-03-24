@@ -564,7 +564,7 @@ function AdminWorkflowPageContent() {
         {
           story_draft_id: draft.id,
         },
-        { token, timeoutMs: 30000 },
+        { token, timeoutMs: 180_000 },
       );
       setMessage("Page plan generated and page images are now generating.");
       setStatusTone("success");
@@ -601,7 +601,7 @@ function AdminWorkflowPageContent() {
           story_draft_id: record.draft.id,
           page_ids: pageIds.length ? pageIds : undefined,
         },
-        { token, timeoutMs: 30000 },
+        { token, timeoutMs: 180_000 },
       );
       setMessage("Page image generation started.");
       setStatusTone("success");
@@ -632,7 +632,7 @@ function AdminWorkflowPageContent() {
       await apiPost(
         `/editorial/story-drafts/${draft.id}/build-preview`,
         undefined,
-        { token },
+        { token, timeoutMs: 60_000 },
       );
       setMessage("Book preview assembled.");
       setStatusTone("success");
