@@ -183,6 +183,7 @@ function ReaderPageContent() {
   const narratedStoriesEnabled = isEnabled("narrated_stories_enabled");
   const offlineDownloadsEnabled = isEnabled("offline_downloads_enabled");
   const effectiveLanguage = selectedChildProfile?.language || locale;
+  const authenticatedChildProfileId = isAuthenticated && token ? (selectedChildProfile?.id ?? undefined) : undefined;
 
   useEffect(() => {
     setOnboardingStoryTracked(false);
@@ -269,7 +270,7 @@ function ReaderPageContent() {
               token: authToken,
               query: {
                 language: effectiveLanguage,
-                child_profile_id: selectedChildProfile?.id,
+                child_profile_id: authenticatedChildProfileId,
               },
             });
           }
@@ -289,7 +290,7 @@ function ReaderPageContent() {
                 token: authToken,
                 query: {
                   language: effectiveLanguage,
-                  child_profile_id: selectedChildProfile?.id,
+                  child_profile_id: authenticatedChildProfileId,
                 },
               });
             }
@@ -335,7 +336,7 @@ function ReaderPageContent() {
               query: {
                 reader_identifier: readerIdentifier,
                 book_id: bookId,
-                child_profile_id: selectedChildProfile?.id,
+                child_profile_id: authenticatedChildProfileId,
               },
             });
             setSavedProgress(progress);
@@ -358,12 +359,12 @@ function ReaderPageContent() {
         }
         if (!isPreviewMode && isAuthenticated && authToken) {
           const [savedLibrary, accessResponse] = await Promise.all([
-            fetchSavedLibrary({ token: authToken, childProfileId: selectedChildProfile?.id }),
+            fetchSavedLibrary({ token: authToken, childProfileId: authenticatedChildProfileId }),
             fetchDownloadAccess(bookId, { token: authToken, language: effectiveLanguage }),
           ]);
           setLibraryItem(savedLibrary.items.find((item) => item.book_id === bookId) ?? null);
           setDownloadAccess(accessResponse);
-          void markLibraryBookOpened(bookId, { token: authToken, childProfileId: selectedChildProfile?.id });
+          void markLibraryBookOpened(bookId, { token: authToken, childProfileId: authenticatedChildProfileId });
         } else {
           setLibraryItem(null);
           setDownloadAccess(null);
@@ -494,7 +495,7 @@ function ReaderPageContent() {
       try {
         const voicesResponse = await apiGet<AvailableVoicesResponse>("/narration/voices", {
           token: authToken,
-          query: { language: effectiveLanguage, child_profile_id: selectedChildProfile?.id },
+          query: { language: effectiveLanguage, child_profile_id: authenticatedChildProfileId },
         });
         setAvailableVoices(voicesResponse.voices);
 
@@ -508,7 +509,7 @@ function ReaderPageContent() {
             query: {
               language: effectiveLanguage,
               voice_key: preferredVoiceKey,
-              child_profile_id: selectedChildProfile?.id,
+              child_profile_id: authenticatedChildProfileId,
             },
           });
           setNarration(response);
@@ -518,7 +519,7 @@ function ReaderPageContent() {
           if (err instanceof ApiError && err.status === 403 && preferredVoiceKey) {
             const fallback = await apiGet<ReaderNarrationResponse>(`/narration/books/${bookId}`, {
               token: authToken,
-              query: { language: effectiveLanguage, child_profile_id: selectedChildProfile?.id },
+              query: { language: effectiveLanguage, child_profile_id: authenticatedChildProfileId },
             });
             setNarration(fallback);
             setSelectedVoiceKey(fallback.voice.key);
@@ -557,7 +558,7 @@ function ReaderPageContent() {
       token: authToken,
       query: {
         user_context: isAuthenticated,
-        child_profile_id: selectedChildProfile?.id,
+        child_profile_id: authenticatedChildProfileId,
         limit: 4,
       },
     })
@@ -575,7 +576,7 @@ function ReaderPageContent() {
 
     void apiGet<BedtimePackDetailResponse>("/bedtime-packs/me/latest", {
       token,
-      query: { child_profile_id: selectedChildProfile?.id },
+      query: { child_profile_id: authenticatedChildProfileId },
     })
       .then((response) => {
         setBedtimePackDetail(response);
