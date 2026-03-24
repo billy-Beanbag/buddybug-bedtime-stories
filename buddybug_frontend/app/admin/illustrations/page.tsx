@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 
 import { EmptyState } from "@/components/EmptyState";
 import { LoadingState } from "@/components/LoadingState";
-import { IllustrationQueueList } from "@/components/admin/IllustrationQueueList";
+import { IllustrationQueueList, type IllustrationQueueItem } from "@/components/admin/IllustrationQueueList";
 import { useAuth } from "@/context/AuthContext";
 import { apiGet } from "@/lib/api";
 import { ADMIN_PRIMARY_BUTTON } from "@/lib/admin-styles";
@@ -37,7 +37,7 @@ function enrichIllustrations(
   drafts: EditorialStoryDraftRead[],
   books: BookRead[],
   latestAssetsByPage: Map<number, IllustrationAssetRead | null>,
-): AdminIllustrationSummary[] {
+): IllustrationQueueItem[] {
   const pagesById = new Map(pages.map((page) => [page.id, page]));
   const draftsById = new Map(drafts.map((draft) => [draft.id, draft]));
   const booksByDraftId = new Map(books.map((book) => [book.story_draft_id, book]));
@@ -57,6 +57,7 @@ function enrichIllustrations(
       published: illustration.published ?? book?.published ?? null,
       publication_status: illustration.publication_status ?? book?.publication_status ?? null,
       page_number: illustration.page_number ?? page?.page_number ?? null,
+      page_text: page?.page_text ?? null,
       scene_summary: illustration.scene_summary ?? page?.scene_summary ?? null,
       image_url: illustration.image_url ?? latestAsset?.image_url ?? null,
     };
@@ -68,7 +69,7 @@ function AdminIllustrationsPageContent() {
   const searchParams = useSearchParams();
   const draftIdFilter = searchParams.get("draftId");
   const bookIdFilter = searchParams.get("bookId");
-  const [illustrations, setIllustrations] = useState<AdminIllustrationSummary[]>([]);
+  const [illustrations, setIllustrations] = useState<IllustrationQueueItem[]>([]);
   const [referencesByPage, setReferencesByPage] = useState<Record<number, VisualReferenceAssetRead[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

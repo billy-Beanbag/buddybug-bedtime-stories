@@ -10,6 +10,10 @@ import type {
   VisualReferenceAssetRead,
 } from "@/lib/types";
 
+export interface IllustrationQueueItem extends AdminIllustrationSummary {
+  page_text?: string | null;
+}
+
 const REJECTION_REASON_OPTIONS = [
   "Out of sync with the scene",
   "Missing key character",
@@ -27,7 +31,7 @@ export function IllustrationQueueList({
   token,
   onUpdated,
 }: {
-  illustrations: AdminIllustrationSummary[];
+  illustrations: IllustrationQueueItem[];
   referencesByPage: Record<number, VisualReferenceAssetRead[]>;
   token: string | null;
   onUpdated: () => Promise<void> | void;
@@ -110,10 +114,9 @@ export function IllustrationQueueList({
           "/illustrations/generate",
           {
             story_page_id: illustration.story_page_id,
-            provider: illustration.provider === "manual_upload" ? undefined : illustration.provider,
             generation_notes: feedback,
           },
-          { token },
+          { token, timeoutMs: 180_000 },
         );
       }
       setMessage(
@@ -161,8 +164,14 @@ export function IllustrationQueueList({
               <p className="text-sm text-slate-600">
                 Draft {illustration.story_draft_id ?? "?"} • Page {illustration.page_number ?? illustration.story_page_id}
               </p>
+              {illustration.page_text ? (
+                <div className="max-w-3xl rounded-2xl bg-slate-50 px-3 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Story text on this page</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-700">{illustration.page_text}</p>
+                </div>
+              ) : null}
               {illustration.scene_summary ? (
-                <p className="max-w-2xl text-sm text-slate-600">{illustration.scene_summary}</p>
+                <p className="max-w-2xl text-sm text-slate-500">Scene summary: {illustration.scene_summary}</p>
               ) : null}
               <p className="text-sm text-slate-600">Status: {illustration.approval_status}</p>
               <p className="text-sm text-slate-600">
