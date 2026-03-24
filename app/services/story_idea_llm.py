@@ -73,8 +73,8 @@ def _build_user_prompt(
     exclude_premise_lines: list[str],
 ) -> str:
     allowed_hooks = BEDTIME_ALLOWED_HOOK_KEYS if mode == BEDTIME_MODE else STANDARD_ALLOWED_HOOK_KEYS
-    mode_label = "bedtime (calm, concrete, gentle — still a real plot)" if mode == BEDTIME_MODE else (
-        "playful adventure (funny, energetic, mischief welcome — not sleepy)"
+    mode_label = "plot-led bedtime (cozy and sleepy by the ending, but lively and engaging on the way)" if mode == BEDTIME_MODE else (
+        "afternoon adventure (witty, cheeky, energetic, plot-led, mischief welcome — not sleepy, not bedtime)"
     )
     chars = ", ".join(available_characters) if available_characters else "Verity, Dolly, Daphne, Buddybug"
     lines: list[str] = [
@@ -99,6 +99,21 @@ def _build_user_prompt(
             "- No duplicate premises; vary settings and problems across the batch.",
             "- Do not mention 'AI', 'story idea', or meta writing language.",
     ]
+    if mode == BEDTIME_MODE:
+        lines.extend(
+            [
+                "- Bedtime ideas should still feel engaging and plot-led, with a concrete problem or mystery and one playful or surprising beat in the middle.",
+                "- Bedtime ideas should end in a sleepy, reassuring, clearly settled conclusion after the problem is solved.",
+            ]
+        )
+    else:
+        lines.extend(
+            [
+                "- Adventure ideas must not end with going to bed, falling asleep, bedtime routine beats, or sleepy goodnight framing.",
+                "- Adventure ideas should feel witty, cheeky, and engaging enough for an afternoon read, with a stronger comic or mischievous turn than bedtime stories.",
+                "- Aim for a warm but alert ending: proud, relieved, excited, curious, or cheerfully satisfied.",
+            ]
+        )
     if exclude_premise_lines:
         lines.append("")
         lines.append(

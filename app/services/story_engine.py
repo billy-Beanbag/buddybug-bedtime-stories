@@ -523,7 +523,7 @@ def build_story_plan(
     prompt_context = StoryPromptContext(
         mode=mode,
         target_tone=tone or _default_tone_for_mode(mode, lane_key),
-        target_pacing="soft and gentle" if mode == BEDTIME_MODE else "playful and clearly paced",
+        target_pacing="engaging, clear, and gently winding down by the end" if mode == BEDTIME_MODE else "playful, witty, and clearly paced",
         hook_first_instruction="The first 2-4 lines must contain a concrete hook that makes the child want to know what happens next.",
         anti_poetic_overload_instruction=(
             "Avoid excessive poetic imagery. Reduce overuse of moonlight, glowing stars, whispering breezes, silver light, and dreamy filler. "
@@ -531,11 +531,13 @@ def build_story_plan(
         ),
         structure_instruction="Build a clear beginning-middle-end with an opening hook, a small problem, a meaningful middle event, and a satisfying resolution.",
         guidance=(
-            "Write a gentle bedtime story with a clear hook in the opening, a small central problem, and a calm satisfying resolution. "
-            "Keep the language warm and simple. Avoid excessive poetic imagery or dreamy filler. The story should feel soothing, but still have a real plot."
+            "Write a plot-led bedtime story with a clear hook in the opening, a small central problem, at least one playful or surprising middle beat, and a calm sleepy resolution. "
+            "Keep the language warm and simple. Avoid excessive poetic imagery or dreamy filler. The story should feel engaging on the way through, then gently settle into a reassuring bedtime ending."
             if mode == BEDTIME_MODE
             else "Write a warm, playful children's story with a clear hook, a small funny problem or mischievous moment, and a satisfying resolution. "
-            "Allow cheeky fun and light humour, but keep it kind, safe, and age-appropriate."
+            "Allow cheeky fun and light humour, but keep it kind, safe, and age-appropriate. "
+            "Do not drift into bedtime framing: no settling into bed, no falling asleep, and no sleepy goodnight ending unless the lane is explicitly bedtime. "
+            "Finish with warm energy, wit, and proud relief rather than drowsiness. It should feel like an engaging afternoon read."
         ),
     )
     resolved_title = title or _generate_title(

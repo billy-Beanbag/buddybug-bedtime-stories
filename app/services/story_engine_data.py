@@ -4,9 +4,9 @@ from app.schemas.story_engine_schema import StoryHook
 BEDTIME_MODE = "bedtime"
 STANDARD_MODE = "standard"
 
-DEFAULT_BEDTIME_TONE = "calm, gentle, plot-led, bedtime-safe, concrete visible bedtime progression"
+DEFAULT_BEDTIME_TONE = "warm, plot-led, gently playful, bedtime-safe, concrete visible bedtime progression, sleepy by the ending"
 DEFAULT_STANDARD_TONE = "warm, playful, cheeky, plot-led"
-DEFAULT_ADVENTURE_TONE = "warm, adventurous, mischievous, giggly, plot-led, engaging and funny"
+DEFAULT_ADVENTURE_TONE = "warm, adventurous, witty, cheeky, mischievous, giggly, plot-led, engaging and funny"
 
 BEDTIME_SETTINGS = [
     "cozy bedroom",

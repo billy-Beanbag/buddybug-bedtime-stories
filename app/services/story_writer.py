@@ -567,6 +567,17 @@ def _setup_and_ending_issues(
                     deduction=8,
                 )
             )
+        if story_brief.mode != "bedtime" and any(
+            token in last_paragraph for token in {"sleep", "sleepy", "bedtime", "goodnight", "blanket", "pillow", "yawn"}
+        ):
+            issues.append(
+                QualityIssueSignal(
+                    code="sleepy_final_beat_for_adventure",
+                    message="The ending becomes sleepy or bedtime-coded when the brief calls for a non-bedtime payoff.",
+                    severity="medium",
+                    deduction=12,
+                )
+            )
     if story_brief.beat_card.comic_or_surprising_reveal:
         reveal_tokens = {
             token

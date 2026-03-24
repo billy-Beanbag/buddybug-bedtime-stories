@@ -200,8 +200,12 @@ def build_story_generation_prompt(story_brief: StoryBrief) -> str:
             "- Show the central problem clearly in paragraph 1 or 2.",
             "- Show the problem being solved clearly before the final paragraph.",
             "- For bedtime stories, include 2-4 concrete visible middle beats and avoid relying on atmosphere alone.",
+            "- For bedtime stories, include at least one playful, witty, or lightly surprising middle beat before the final sleepy landing.",
             "- When appropriate for a garden, path, or outdoor bedtime setting, include one or more gentle goodnight encounters with tiny creatures such as a hedgehog, worm, frog, moth, beetle, or similar safe bedtime creature.",
             "- For adventure or standard (non-bedtime) stories, include at least one clearly funny or mischievous moment that would make children giggle; avoid calm, sleepy, or soothing tones.",
+            "- For adventure or standard (non-bedtime) stories, do not end with bedtime routine beats, falling asleep, yawning into bed, or whispering goodnight.",
+            "- For adventure or standard (non-bedtime) stories, end with warm alert satisfaction such as pride, relief, curiosity, celebration, or eager calm after the solution.",
+            "- For adventure or standard (non-bedtime) stories, lean slightly more witty, cheeky, and afternoon-readable than the bedtime lane.",
             "Output only the final story text.",
         ]
     )

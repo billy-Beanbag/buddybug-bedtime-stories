@@ -240,6 +240,24 @@ def publish_book(
             .order_by(StoryPage.page_number)
         ).all(),
     )
+    existing_published = list(
+        session.exec(
+            select(Book).where(
+                Book.story_draft_id == story_draft.id,
+                Book.id != book.id,
+                Book.published.is_(True),
+            )
+        ).all()
+    )
+    for existing in existing_published:
+        existing.published = False
+        existing.publication_status = "archived"
+        existing.updated_at = utc_now()
+        session.add(existing)
+    book.title = story_draft.title
+    book.age_band = story_draft.age_band
+    book.language = story_draft.language
+    book.content_lane_key = story_draft.content_lane_key
     book.published = True
     book.publication_status = "published"
     book.updated_at = utc_now()
