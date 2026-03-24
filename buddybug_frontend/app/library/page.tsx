@@ -34,7 +34,7 @@ import type {
 
 export default function LibraryPage() {
   const { hasPremiumAccess, isAuthenticated, token, user } = useAuth();
-  const { selectedChildProfile } = useChildProfiles();
+  const { selectedChildProfile, isLoading: childProfilesLoading } = useChildProfiles();
   const { isEnabled } = useFeatureFlags();
   const { resolvedControls } = useParentalControls();
   const { locale, t } = useLocale();
@@ -120,6 +120,9 @@ export default function LibraryPage() {
 
   useEffect(() => {
     async function loadBooks() {
+      if (isAuthenticated && childProfilesLoading) {
+        return;
+      }
       try {
         const childProfileIdForRequest = isAuthenticated && token ? selectedChildProfile?.id : undefined;
         const [data, recommendations] = await Promise.all([
@@ -170,7 +173,7 @@ export default function LibraryPage() {
     }
 
     void loadBooks();
-  }, [effectiveAgeBand, effectiveLanguage, isAuthenticated, selectedChildProfile?.id, token]);
+  }, [childProfilesLoading, effectiveAgeBand, effectiveLanguage, isAuthenticated, selectedChildProfile?.id, token]);
 
   useEffect(() => {
     if (!recommended.length) {
@@ -188,7 +191,7 @@ export default function LibraryPage() {
     );
   }, [effectiveLanguage, isAuthenticated, recommended, selectedChildProfile?.id, token, user]);
 
-  if (loading) {
+  if (loading || (isAuthenticated && childProfilesLoading)) {
     return <LoadingState message="Loading published books..." />;
   }
 

@@ -28,6 +28,7 @@ export function ChildProfileSwitcher() {
         }
         className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none"
       >
+        <option value="">All library books</option>
         {childProfiles.map((profile) => (
           <option key={profile.id} value={profile.id}>
             {profile.display_name} ({profile.age_band})
