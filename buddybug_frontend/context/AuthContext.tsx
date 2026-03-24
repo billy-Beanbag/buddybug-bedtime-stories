@@ -79,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const currentSubscription = await apiGet<SubscriptionStatusRead>("/subscriptions/me", {
         token: activeToken,
+        timeoutMs: 60_000,
       });
       setSubscription(currentSubscription);
     } catch {
@@ -99,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const currentBilling = await apiGet<BillingStatusResponse>("/billing/me", {
         token: activeToken,
+        timeoutMs: 60_000,
       });
       setBilling(currentBilling);
     } catch {
@@ -123,7 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const currentUser = await apiGet<User>("/users/me", { token: activeToken });
+      const currentUser = await apiGet<User>("/users/me", { token: activeToken, timeoutMs: 60_000 });
       persistAuth(activeToken, currentUser);
       setToken(activeToken);
       setUser(currentUser);
@@ -166,7 +168,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (input: LoginInput) => {
-      const response = await apiPost<TokenResponse>("/users/login", input);
+      // Backend cold starts (e.g. Render) often exceed the default 15s client timeout.
+      const response = await apiPost<TokenResponse>("/users/login", input, { timeoutMs: 180_000 });
       await handleAuthSuccess(response);
     },
     [handleAuthSuccess],
@@ -183,7 +186,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         accept_terms: input.accept_terms ?? true,
         accept_privacy: input.accept_privacy ?? true,
         referral_code: input.referral_code || null,
-      });
+      }, { timeoutMs: 180_000 });
       await handleAuthSuccess(response);
     },
     [handleAuthSuccess],
