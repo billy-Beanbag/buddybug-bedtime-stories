@@ -520,7 +520,7 @@ function AdminWorkflowPageContent() {
     setMessage(null);
     setError(null);
     try {
-      await apiPost("/story-drafts/generate", { story_idea_id: ideaId }, { token, timeoutMs: 90000 });
+      await apiPost("/story-drafts/generate", { story_idea_id: ideaId }, { token, timeoutMs: 150000 });
       setMessage("Draft generated from selected idea.");
       setStatusTone("success");
       setStatusDetail("Draft generated. Refreshing workflow...");
@@ -528,7 +528,7 @@ function AdminWorkflowPageContent() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unable to generate draft";
       const isAbort = msg.toLowerCase().includes("abort") || msg.toLowerCase().includes("timeout");
-      setError(isAbort ? "Request timed out. Draft generation can take up to a minute—please try again." : msg);
+      setError(isAbort ? "Request timed out. Draft generation can take a couple of minutes online - please try again." : msg);
       setStatusTone("error");
       setStatusDetail("Unable to generate a draft for this idea.");
     } finally {
@@ -554,19 +554,63 @@ function AdminWorkflowPageContent() {
         {
           story_draft_id: draft.id,
           target_page_count: undefined,
-          min_pages: 8,
-          max_pages: 14,
+          min_pages: 5,
+          max_pages: 6,
         },
         { token },
       );
-      setMessage("Page plan generated.");
+      await apiPost(
+        "/workflows/generate-page-illustrations",
+        {
+          story_draft_id: draft.id,
+        },
+        { token, timeoutMs: 30000 },
+      );
+      setMessage("Page plan generated and page images are now generating.");
       setStatusTone("success");
-      setStatusDetail("Page plan generated. Refreshing workflow...");
+      setStatusDetail("Page plan generated and image generation started. Refreshing workflow...");
       await loadWorkflow({ silent: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to generate page plan");
       setStatusTone("error");
       setStatusDetail("Unable to generate a page plan for this draft.");
+    } finally {
+      setBusyKey(null);
+    }
+  }
+
+  async function handleGeneratePageImages(record: WorkflowRecord) {
+    if (!token || !record.draft) {
+      return;
+    }
+    const pageIds = record.pages
+      .filter((page) => page.image_status === "prompt_ready" || page.image_status === "image_rejected")
+      .map((page) => page.id);
+    setStatusRecordKey(record.key);
+    setStatusTone("info");
+    setStatusDetail("Starting page image generation...");
+    setNextStepRecordKey(null);
+    setNextStepType(null);
+    setBusyKey(`draft-${record.draft.id}-images`);
+    setMessage(null);
+    setError(null);
+    try {
+      await apiPost(
+        "/workflows/generate-page-illustrations",
+        {
+          story_draft_id: record.draft.id,
+          page_ids: pageIds.length ? pageIds : undefined,
+        },
+        { token, timeoutMs: 30000 },
+      );
+      setMessage("Page image generation started.");
+      setStatusTone("success");
+      setStatusDetail("Page image generation started. Refreshing workflow...");
+      await loadWorkflow({ silent: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to generate page images");
+      setStatusTone("error");
+      setStatusDetail("Unable to start page image generation for this draft.");
     } finally {
       setBusyKey(null);
     }
@@ -928,6 +972,17 @@ function AdminWorkflowPageContent() {
                       className="rounded-2xl bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-800 disabled:opacity-60"
                     >
                       {busyKey === `draft-${record.draft.id}-plan` ? "Generating page plan..." : "Generate page plan"}
+                    </button>
+                  ) : null}
+
+                  {record.draft && (summary.promptReadyPages > 0 || summary.rejectedPages > 0) ? (
+                    <button
+                      type="button"
+                      disabled={busyKey === `draft-${record.draft.id}-images`}
+                      onClick={() => void handleGeneratePageImages(record)}
+                      className="rounded-2xl bg-violet-50 px-4 py-2 text-sm font-medium text-violet-800 disabled:opacity-60"
+                    >
+                      {busyKey === `draft-${record.draft.id}-images` ? "Starting page images..." : "Generate page images"}
                     </button>
                   ) : null}
 
