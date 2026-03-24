@@ -30,6 +30,7 @@ services:
       # CORS_ALLOW_ORIGINS = https://your-app.vercel.app,https://your-app-*.vercel.app
       # STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PRICE_ID_PREMIUM_MONTHLY
       # STRIPE_SUCCESS_URL, STRIPE_CANCEL_URL (use your Vercel URL)
+      # STORY_GENERATION_API_KEY, STORY_GENERATION_MODEL for live AI story + idea generation
       - key: CORS_ALLOW_ORIGINS
         sync: false
       - key: STRIPE_SECRET_KEY
@@ -43,4 +44,14 @@ services:
       - key: STRIPE_CANCEL_URL
         sync: false
       - key: STORAGE_PUBLIC_BASE_URL
+        sync: false
+      - key: STORY_GENERATION_API_KEY
+        sync: false
+      - key: STORY_GENERATION_MODEL
+        sync: false
+      - key: STORY_GENERATION_BASE_URL
+        sync: false
+      - key: STORY_GENERATION_TIMEOUT_SECONDS
+        sync: false
+      - key: STORY_IDEA_GENERATION_USE_LLM
         sync: false

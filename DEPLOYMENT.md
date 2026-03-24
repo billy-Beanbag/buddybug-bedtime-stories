@@ -58,6 +58,11 @@ Deploy Buddybug to the internet using **GitHub**, **Vercel** (frontend), **Rende
    |----------|-------|
    | `CORS_ALLOW_ORIGINS` | `https://your-app.vercel.app` *(see Step 3 – add after Vercel deploy)* |
    | `CORS_ALLOW_ORIGIN_REGEX` | *(optional)* `^https://.*\.vercel\.app$` — matches all Vercel preview + production URLs on `*.vercel.app` |
+   | `STORY_GENERATION_API_KEY` | your live model provider key |
+   | `STORY_GENERATION_MODEL` | e.g. `gpt-4.1` |
+   | `STORY_GENERATION_BASE_URL` | `https://api.openai.com/v1` |
+   | `STORY_GENERATION_TIMEOUT_SECONDS` | `45` |
+   | `STORY_IDEA_GENERATION_USE_LLM` | `true` |
    | `STRIPE_SECRET_KEY` | `sk_test_...` from [Stripe Dashboard → Developers → API keys](https://dashboard.stripe.com/test/apikeys) |
    | `STRIPE_WEBHOOK_SECRET` | *(add after Step 4)* |
    | `STRIPE_PRICE_ID_PREMIUM_MONTHLY` | `price_...` from Stripe Products/Prices |
@@ -71,6 +76,8 @@ Deploy Buddybug to the internet using **GitHub**, **Vercel** (frontend), **Rende
    - **Environment groups:** variables in a group apply only after you **link** the group on **`buddybug-api` → Environment → Linked Environment Groups**, or copy the same keys onto the service directly.
 
 8. **Trigger a manual redeploy** after setting variables
+
+   For story ideas specifically: if `STORY_GENERATION_API_KEY` or `STORY_GENERATION_MODEL` is missing on Render, `/story-ideas/generate` will silently fall back to curated ideas even though local AI generation works.
 
 9. **Copy your backend URL** – e.g. `https://buddybug-api.onrender.com`
 

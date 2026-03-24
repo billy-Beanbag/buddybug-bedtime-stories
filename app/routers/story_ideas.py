@@ -6,6 +6,7 @@ from sqlmodel import Session, select
 from app.database import get_session
 from app.models import Character, StoryIdea
 from app.schemas.story_schema import (
+    IdeaGenerationSummary,
     StoryIdeaBatchGenerateResponse,
     StoryIdeaCreate,
     StoryIdeaGenerateRequest,
@@ -63,7 +64,26 @@ def generate_story_ideas(
         content_lane_key=payload.content_lane_key,
     )
     available_characters = _active_character_names(session)
-    generated_payloads = generate_story_idea_payloads(
+    # Exclude recent premises across all lanes so bedtime/adventure swaps still avoid repeats.
+    recent_premises = session.exec(
+        select(StoryIdea.premise).order_by(StoryIdea.created_at.desc()).limit(120),
+    ).all()
+    seen_keys: set[str] = set()
+    exclude_set: set[str] = set()
+    hint_lines: list[str] = []
+    for p in recent_premises:
+        s = str(p).strip()
+        if not s:
+            continue
+        key = s.casefold()
+        if key in seen_keys:
+            continue
+        seen_keys.add(key)
+        exclude_set.add(key)
+        hint_lines.append(s[:240])
+        if len(hint_lines) >= 35:
+            break
+    batch = generate_story_idea_payloads(
         count=payload.count,
         age_band=lane.age_band,
         content_lane_key=lane.key,
@@ -71,10 +91,12 @@ def generate_story_ideas(
         include_characters=payload.include_characters,
         bedtime_only=payload.bedtime_only,
         available_characters=available_characters,
+        exclude_premises=frozenset(exclude_set) if exclude_set else None,
+        exclude_premise_hints=tuple(hint_lines) if hint_lines else None,
     )
 
     created_ideas: list[StoryIdea] = []
-    for item in generated_payloads:
+    for item in batch.payloads:
         story_idea = StoryIdea(**item)
         session.add(story_idea)
         created_ideas.append(story_idea)
@@ -83,7 +105,16 @@ def generate_story_ideas(
     for story_idea in created_ideas:
         session.refresh(story_idea)
 
-    return StoryIdeaBatchGenerateResponse(created_count=len(created_ideas), ideas=created_ideas)
+    return StoryIdeaBatchGenerateResponse(
+        created_count=len(created_ideas),
+        ideas=created_ideas,
+        generation_summary=IdeaGenerationSummary(
+            path=batch.path,
+            excluded_recent_premise_count=batch.excluded_premise_count,
+            llm_idea_count=batch.llm_idea_count,
+            curated_idea_count=batch.curated_idea_count,
+        ),
+    )
 
 
 @router.get("", response_model=list[StoryIdeaRead], summary="List story ideas")

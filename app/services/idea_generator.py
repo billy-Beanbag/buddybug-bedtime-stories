@@ -1,4 +1,7 @@
-from app.services.story_idea_generator import generate_story_idea_payloads as generate_structured_story_idea_payloads
+from app.services.story_idea_generator import (
+    IdeaGenerationResult,
+    generate_story_idea_payloads as generate_structured_story_idea_payloads,
+)
 
 
 CANONICAL_CHARACTER_ORDER = [
@@ -21,7 +24,9 @@ def generate_story_idea_payloads(
     include_characters: list[str] | None,
     bedtime_only: bool,
     available_characters: list[str],
-) -> list[dict[str, str | int | None]]:
+    exclude_premises: frozenset[str] | None = None,
+    exclude_premise_hints: tuple[str, ...] | None = None,
+) -> IdeaGenerationResult:
     """Generate hook-first structured story ideas via the Buddybug pipeline."""
     return generate_structured_story_idea_payloads(
         count=count,
@@ -31,4 +36,9 @@ def generate_story_idea_payloads(
         include_characters=include_characters,
         bedtime_only=bedtime_only,
         available_characters=available_characters,
+        exclude_premises=exclude_premises,
+        exclude_premise_hints=exclude_premise_hints,
     )
+
+
+__all__ = ["CANONICAL_CHARACTER_ORDER", "IdeaGenerationResult", "generate_story_idea_payloads"]

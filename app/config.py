@@ -86,6 +86,7 @@ class Settings:
     story_generation_candidate_count: int
     story_generation_debug: bool
     story_generation_require_live: bool
+    story_idea_generation_use_llm: bool
     illustration_generation_provider: str
     illustration_generation_api_key: str
     illustration_generation_model: str
@@ -143,6 +144,7 @@ def get_settings() -> Settings:
         story_generation_candidate_count=_get_int_env("STORY_GENERATION_CANDIDATE_COUNT", 2),
         story_generation_debug=_get_bool_env("STORY_GENERATION_DEBUG", False),
         story_generation_require_live=_get_bool_env("STORY_GENERATION_REQUIRE_LIVE", False),
+        story_idea_generation_use_llm=_get_bool_env("STORY_IDEA_GENERATION_USE_LLM", True),
         illustration_generation_provider=os.getenv("ILLUSTRATION_GENERATION_PROVIDER", "mock"),
         illustration_generation_api_key=os.getenv("ILLUSTRATION_GENERATION_API_KEY", ""),
         illustration_generation_model=raw_illustration_generation_model,
@@ -189,6 +191,7 @@ STORY_GENERATION_TIMEOUT_SECONDS = settings.story_generation_timeout_seconds
 STORY_GENERATION_CANDIDATE_COUNT = settings.story_generation_candidate_count
 STORY_GENERATION_DEBUG = settings.story_generation_debug
 STORY_GENERATION_REQUIRE_LIVE = settings.story_generation_require_live
+STORY_IDEA_GENERATION_USE_LLM = settings.story_idea_generation_use_llm
 ILLUSTRATION_GENERATION_PROVIDER = settings.illustration_generation_provider
 ILLUSTRATION_GENERATION_API_KEY = settings.illustration_generation_api_key
 ILLUSTRATION_GENERATION_MODEL = settings.illustration_generation_model

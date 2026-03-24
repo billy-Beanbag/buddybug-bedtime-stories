@@ -1978,6 +1978,20 @@ export interface AdminStoryIdeaSummary {
   created_at: string;
 }
 
+/** Returned by POST /story-ideas/generate (how LLM vs curated was used). */
+export interface IdeaGenerationSummary {
+  path: "llm" | "llm_plus_curated" | "curated" | string;
+  excluded_recent_premise_count: number;
+  llm_idea_count: number;
+  curated_idea_count: number;
+}
+
+export interface StoryIdeaBatchGenerateResponse {
+  created_count: number;
+  ideas: unknown[];
+  generation_summary?: IdeaGenerationSummary | null;
+}
+
 export interface AdminStoryDraftSummary {
   id: number;
   story_idea_id: number;

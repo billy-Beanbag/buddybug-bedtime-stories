@@ -7,7 +7,20 @@ import { LoadingState } from "@/components/LoadingState";
 import { useAuth } from "@/context/AuthContext";
 import { apiGet, apiPost } from "@/lib/api";
 import { ADMIN_PRIMARY_BUTTON } from "@/lib/admin-styles";
-import type { AdminStoryIdeaSummary } from "@/lib/types";
+import type { AdminStoryIdeaSummary, StoryIdeaBatchGenerateResponse } from "@/lib/types";
+
+function formatGenerationSummary(s: StoryIdeaBatchGenerateResponse["generation_summary"]): string {
+  if (!s) return "";
+  const pathLabel =
+    s.path === "llm"
+      ? "all from LLM"
+      : s.path === "llm_plus_curated"
+        ? "LLM + curated top-up"
+        : s.path === "curated"
+          ? "curated (LLM off, missing key, or model returned nothing usable)"
+          : s.path;
+  return `Created ${s.llm_idea_count} LLM + ${s.curated_idea_count} curated (${pathLabel}). Excluded ${s.excluded_recent_premise_count} recent premises from prompts.`;
+}
 
 export default function AdminIdeasPage() {
   const { token } = useAuth();
@@ -27,7 +40,7 @@ export default function AdminIdeasPage() {
     setMessage(null);
     setError(null);
     try {
-      await apiPost(
+      const gen = await apiPost<StoryIdeaBatchGenerateResponse>(
         "/story-ideas/generate",
         {
           count: 5,
@@ -39,7 +52,12 @@ export default function AdminIdeasPage() {
         },
         { token },
       );
-      setMessage("Ideas generated. Refresh to see them.");
+      const detail = formatGenerationSummary(gen.generation_summary);
+      setMessage(
+        detail
+          ? `Created ${gen.created_count} idea(s). ${detail} List updated below.`
+          : `Created ${gen.created_count} idea(s). List updated below.`,
+      );
       await loadIdeas();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to generate ideas");

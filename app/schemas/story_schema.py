@@ -63,9 +63,24 @@ class StoryIdeaGenerateRequest(SQLModel):
     bedtime_only: bool = True
 
 
+class IdeaGenerationSummary(SQLModel):
+    """How the batch was produced (admin / debugging; no secrets)."""
+
+    path: str = Field(
+        description="llm | llm_plus_curated | curated",
+    )
+    excluded_recent_premise_count: int = Field(
+        ge=0,
+        description="Size of premise exclusion set (recent DB premises + merged LLM rows when applicable).",
+    )
+    llm_idea_count: int = Field(ge=0)
+    curated_idea_count: int = Field(ge=0)
+
+
 class StoryIdeaBatchGenerateResponse(SQLModel):
     created_count: int
     ideas: list[StoryIdeaRead]
+    generation_summary: IdeaGenerationSummary | None = None
 
 
 class StoryIdeaSelectRequest(SQLModel):
@@ -191,8 +206,8 @@ class StoryPageUpdate(SQLModel):
 class IllustrationPlanGenerateRequest(SQLModel):
     story_draft_id: int
     target_page_count: int | None = None
-    min_pages: int = Field(default=8, ge=1)
-    max_pages: int = Field(default=14, ge=1)
+    min_pages: int = Field(default=5, ge=1)
+    max_pages: int = Field(default=6, ge=1)
 
 
 class IllustrationPlanBatchResponse(SQLModel):

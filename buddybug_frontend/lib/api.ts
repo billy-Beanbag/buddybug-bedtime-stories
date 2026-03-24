@@ -87,6 +87,22 @@ async function parseResponse<T>(response: Response): Promise<T> {
 
 const REQUEST_TIMEOUT_MS = 15000;
 
+function isAbortError(error: unknown): boolean {
+  if (error instanceof DOMException && error.name === "AbortError") {
+    return true;
+  }
+  if (error instanceof Error) {
+    if (error.name === "AbortError") {
+      return true;
+    }
+    const m = error.message.toLowerCase();
+    if (m.includes("abort") && m.includes("signal")) {
+      return true;
+    }
+  }
+  return false;
+}
+
 async function request<T>(
   method: string,
   path: string,
@@ -95,7 +111,10 @@ async function request<T>(
 ): Promise<T> {
   const controller = new AbortController();
   const timeoutMs = options?.timeoutMs ?? REQUEST_TIMEOUT_MS;
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  const timeoutId = setTimeout(() => {
+    // Gives a clear cause; browsers still map this to AbortError for fetch().
+    controller.abort(new DOMException(`Request timed out after ${timeoutMs}ms`, "TimeoutError"));
+  }, timeoutMs);
 
   try {
     // Only set JSON Content-Type when there is a body. Sending it on GET triggers an
@@ -112,6 +131,14 @@ async function request<T>(
       body: body === undefined ? undefined : JSON.stringify(body),
     });
     return await parseResponse<T>(response);
+  } catch (error) {
+    if (isAbortError(error)) {
+      throw new ApiError(
+        "The request took too long (server may be waking up). Please try again in a few seconds.",
+        408,
+      );
+    }
+    throw error;
   } finally {
     clearTimeout(timeoutId);
   }

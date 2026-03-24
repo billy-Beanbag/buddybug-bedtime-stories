@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+import logging
+import random
+import secrets
+from dataclasses import dataclass
+
 from app.services.content_lane_service import resolve_content_lane_key
 from app.services.story_engine_data import (
     ADVENTURE_FEELINGS,
@@ -20,6 +25,26 @@ from app.services.story_engine_data import (
     STANDARD_MODE,
 )
 from app.utils.seed_content_lanes import STORY_ADVENTURES_8_12_LANE_KEY
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class IdeaGenerationResult:
+    """Structured idea batch plus how it was produced (for API / admin diagnostics)."""
+
+    payloads: list[dict[str, str | int | None]]
+    path: str  # "llm" | "llm_plus_curated" | "curated"
+    excluded_premise_count: int
+    llm_idea_count: int
+    curated_idea_count: int
+
+
+from app.services.curated_story_premises import (
+    CURATED_PREMISES,
+    curated_hook_for_index,
+    title_from_curated_premise,
+)
 
 CANONICAL_CHARACTER_ORDER = [
     "Verity",
@@ -59,16 +84,6 @@ def _split_names(raw_names: str | None) -> list[str]:
     if not raw_names:
         return []
     return [name.strip() for name in raw_names.split(",") if name.strip()]
-
-
-def _join_names(names: list[str]) -> str:
-    if not names:
-        return "their friends"
-    if len(names) == 1:
-        return names[0]
-    if len(names) == 2:
-        return f"{names[0]} and {names[1]}"
-    return ", ".join(names[:-1]) + f", and {names[-1]}"
 
 
 def _infer_mode(*, lane_key: str, bedtime_only: bool, tone: str) -> str:
@@ -141,20 +156,6 @@ def _choose_feeling(*, mode: str, lane_key: str, index: int) -> str:
     else:
         options = STANDARD_3_7_FEELINGS
     return options[index % len(options)]
-
-
-def _choose_hook_type(*, mode: str, main_characters: list[str], supporting_characters: list[str], index: int) -> str:
-    hooks = BEDTIME_ALLOWED_HOOK_KEYS if mode == BEDTIME_MODE else STANDARD_ALLOWED_HOOK_KEYS
-    combined = main_characters + supporting_characters
-    if mode == STANDARD_MODE and "Daphne" in combined:
-        preferred = ["clever_shortcut", "helpful_plan_goes_wrong", "accidental_mess", "silly_competition"]
-        for hook in preferred:
-            if hook in hooks:
-                return preferred[index % len(preferred)]
-    if mode == BEDTIME_MODE and "Dolly" in combined:
-        preferred = ["missing_item", "tiny_creature_problem", "misunderstanding", "gentle_problem"]
-        return preferred[index % len(preferred)]
-    return hooks[index % len(hooks)]
 
 
 def _series_for_characters(main_characters: list[str], supporting_characters: list[str]) -> tuple[str | None, str | None]:
@@ -281,6 +282,37 @@ def _title_for_hook(hook_type: str, main_characters: list[str], setting: str) ->
     return f"{lead} and the Gentle Problem"
 
 
+def _normalize_premise_key(premise: str) -> str:
+    return premise.strip().casefold()
+
+
+def _pick_curated_premise_indices(*, count: int, exclude_normalized: set[str]) -> list[int]:
+    """Pick premise line indices, strongly preferring lines not in exclude_normalized."""
+    n = len(CURATED_PREMISES)
+    preferred = [i for i, p in enumerate(CURATED_PREMISES) if _normalize_premise_key(p) not in exclude_normalized]
+    rng = random.Random(secrets.token_bytes(16))
+    if len(preferred) >= count:
+        rng.shuffle(preferred)
+        return preferred[:count]
+    out: list[int] = []
+    if preferred:
+        rng.shuffle(preferred)
+        out.extend(preferred)
+    need = count - len(out)
+    used = set(out)
+    second = [
+        i
+        for i in range(n)
+        if i not in used and _normalize_premise_key(CURATED_PREMISES[i]) not in exclude_normalized
+    ]
+    if len(second) < need:
+        second = [i for i in range(n) if i not in used]
+    rng.shuffle(second)
+    for j in range(need):
+        out.append(second[j % len(second)])
+    return out[:count]
+
+
 def generate_story_idea_payloads(
     *,
     count: int,
@@ -290,42 +322,158 @@ def generate_story_idea_payloads(
     include_characters: list[str] | None,
     bedtime_only: bool,
     available_characters: list[str],
-) -> list[dict[str, str | int | None]]:
+    exclude_premises: frozenset[str] | None = None,
+    exclude_premise_hints: tuple[str, ...] | None = None,
+) -> IdeaGenerationResult:
     """Generate short, hook-first Buddybug ideas for the structured story pipeline."""
     lane_key = resolve_content_lane_key(age_band, content_lane_key)
     mode = _infer_mode(lane_key=lane_key, bedtime_only=bedtime_only, tone=tone)
     resolved_tone = _resolved_tone(mode=mode, lane_key=lane_key, tone=tone)
+    exclude_norm: set[str] = set(exclude_premises) if exclude_premises else set()
+    excluded_n = len(exclude_norm)
+
+    # Prefer LLM when configured (same STORY_GENERATION_* env as full-story generation).
+    try:
+        from app.config import (
+            STORY_GENERATION_API_KEY,
+            STORY_GENERATION_MODEL,
+            STORY_IDEA_GENERATION_USE_LLM,
+        )
+        from app.services.story_idea_llm import try_generate_llm_idea_payloads
+
+        if (
+            STORY_IDEA_GENERATION_USE_LLM
+            and STORY_GENERATION_API_KEY.strip()
+            and STORY_GENERATION_MODEL.strip()
+        ):
+            llm_payloads = try_generate_llm_idea_payloads(
+                count=count,
+                age_band=age_band,
+                content_lane_key=lane_key,
+                resolved_tone=resolved_tone,
+                mode=mode,
+                available_characters=available_characters,
+                exclude_premises_normalized=exclude_norm,
+                exclude_premise_hints=exclude_premise_hints,
+            )
+            if llm_payloads is not None and len(llm_payloads) >= count:
+                pl = llm_payloads[:count]
+                logger.info(
+                    "story_ideas: returning %s llm_generated_idea rows (lane=%s)",
+                    len(pl),
+                    lane_key,
+                )
+                return IdeaGenerationResult(
+                    payloads=pl,
+                    path="llm",
+                    excluded_premise_count=excluded_n,
+                    llm_idea_count=len(pl),
+                    curated_idea_count=0,
+                )
+            if llm_payloads and len(llm_payloads) > 0:
+                # Partial batch: top up with curated so the UI always gets `count` rows.
+                need = count - len(llm_payloads)
+                extra_exclude = set(exclude_norm)
+                for row in llm_payloads:
+                    pr = row.get("premise")
+                    if isinstance(pr, str) and pr.strip():
+                        extra_exclude.add(_normalize_premise_key(pr))
+                curated_extra = _generate_curated_premise_payloads(
+                    count=need,
+                    age_band=age_band,
+                    lane_key=lane_key,
+                    mode=mode,
+                    resolved_tone=resolved_tone,
+                    include_characters=include_characters,
+                    available_characters=available_characters,
+                    start_index=len(llm_payloads),
+                    exclude_premises_normalized=extra_exclude,
+                )
+                logger.info(
+                    "story_ideas: partial llm (%s) + curated (%s) (lane=%s)",
+                    len(llm_payloads),
+                    need,
+                    lane_key,
+                )
+                combined = [*llm_payloads, *curated_extra]
+                return IdeaGenerationResult(
+                    payloads=combined,
+                    path="llm_plus_curated",
+                    excluded_premise_count=excluded_n,
+                    llm_idea_count=len(llm_payloads),
+                    curated_idea_count=len(curated_extra),
+                )
+            logger.warning(
+                "story_ideas: llm returned no usable rows; curated fallback (lane=%s exclude=%s)",
+                lane_key,
+                len(exclude_norm),
+            )
+    except Exception:
+        logger.exception("LLM idea generation path failed; using curated premises")
+
+    logger.info(
+        "story_ideas: curated_premise batch count=%s lane=%s exclude=%s",
+        count,
+        lane_key,
+        len(exclude_norm),
+    )
+    curated = _generate_curated_premise_payloads(
+        count=count,
+        age_band=age_band,
+        lane_key=lane_key,
+        mode=mode,
+        resolved_tone=resolved_tone,
+        include_characters=include_characters,
+        available_characters=available_characters,
+        start_index=0,
+        exclude_premises_normalized=exclude_norm,
+    )
+    return IdeaGenerationResult(
+        payloads=curated,
+        path="curated",
+        excluded_premise_count=excluded_n,
+        llm_idea_count=0,
+        curated_idea_count=len(curated),
+    )
+
+
+def _generate_curated_premise_payloads(
+    *,
+    count: int,
+    age_band: str,
+    lane_key: str,
+    mode: str,
+    resolved_tone: str,
+    include_characters: list[str] | None,
+    available_characters: list[str],
+    start_index: int,
+    exclude_premises_normalized: set[str] | None = None,
+) -> list[dict[str, str | int | None]]:
     payloads: list[dict[str, str | int | None]] = []
+    ex = exclude_premises_normalized or set()
+    premise_indices = _pick_curated_premise_indices(count=count, exclude_normalized=ex)
 
     for index in range(count):
+        slot = start_index + index
         main_characters, supporting_characters = _choose_characters(
             available_characters=available_characters,
             include_characters=include_characters,
-            index=index,
+            index=slot,
             mode=mode,
         )
-        setting = _choose_setting(mode=mode, lane_key=lane_key, index=index)
-        theme = _choose_theme(mode=mode, lane_key=lane_key, index=index)
-        bedtime_feeling = _choose_feeling(mode=mode, lane_key=lane_key, index=index)
-        hook_type = _choose_hook_type(
-            mode=mode,
-            main_characters=main_characters,
-            supporting_characters=supporting_characters,
-            index=index,
-        )
+        setting = _choose_setting(mode=mode, lane_key=lane_key, index=slot)
+        theme = _choose_theme(mode=mode, lane_key=lane_key, index=slot)
+        bedtime_feeling = _choose_feeling(mode=mode, lane_key=lane_key, index=slot)
+        premise_index = premise_indices[index]
+        premise = CURATED_PREMISES[premise_index]
+        hook_type = curated_hook_for_index(premise_index, mode=mode)
         series_key, series_title = _series_for_characters(main_characters, supporting_characters)
-        premise = _premise_for_hook(
-            hook_type=hook_type,
-            main_characters=main_characters,
-            supporting_characters=supporting_characters,
-            setting=setting,
-        )
         payloads.append(
             {
-                "title": _title_for_hook(hook_type, main_characters, setting),
+                "title": title_from_curated_premise(premise),
                 "premise": premise,
                 "hook_type": hook_type,
-                "age_band": "3-7",
+                "age_band": age_band,
                 "content_lane_key": lane_key,
                 "tone": resolved_tone,
                 "setting": setting,
@@ -337,7 +485,7 @@ def generate_story_idea_payloads(
                 "series_title": series_title,
                 "estimated_minutes": 7 if mode == BEDTIME_MODE else 6,
                 "status": "idea_pending",
-                "generation_source": "ai_generated",
+                "generation_source": "curated_premise",
             }
         )
     return payloads

@@ -427,6 +427,7 @@ from app.schemas.support_schema import (
     SupportTicketUpdate,
 )
 from app.schemas.story_schema import (
+    IdeaGenerationSummary,
     IllustrationPlanBatchResponse,
     IllustrationPlanGenerateRequest,
     StoryDraftCreate,
@@ -775,6 +776,7 @@ __all__ = [
     "StoryQualityQueueItemResponse",
     "StoryQualityReviewRead",
     "StoryQualitySummaryResponse",
+    "IdeaGenerationSummary",
     "StoryIdeaBatchGenerateResponse",
     "StoryIdeaCreate",
     "StoryIdeaGenerateRequest",
