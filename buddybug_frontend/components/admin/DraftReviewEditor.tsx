@@ -104,7 +104,10 @@ export function DraftReviewEditor({
       return;
     }
 
-    let pages = await apiGet<EditorialStoryPageRead[]>(`/story-pages/by-draft/${updatedDraft.id}`, { token });
+    let pages = await apiGet<EditorialStoryPageRead[]>(`/story-pages/by-draft/${updatedDraft.id}`, {
+      token,
+      timeoutMs: 30000,
+    });
     if (pages.length === 0) {
       setMessage("Draft approved. Generating the page plan...");
       await apiPost(
@@ -112,12 +115,15 @@ export function DraftReviewEditor({
         {
           story_draft_id: updatedDraft.id,
           target_page_count: undefined,
-          min_pages: 8,
-          max_pages: 14,
+          min_pages: 5,
+          max_pages: 6,
         },
-        { token },
+        { token, timeoutMs: 30000 },
       );
-      pages = await apiGet<EditorialStoryPageRead[]>(`/story-pages/by-draft/${updatedDraft.id}`, { token });
+      pages = await apiGet<EditorialStoryPageRead[]>(`/story-pages/by-draft/${updatedDraft.id}`, {
+        token,
+        timeoutMs: 30000,
+      });
     }
 
     const pagesNeedingImages = pages.filter(
@@ -127,38 +133,29 @@ export function DraftReviewEditor({
         page.image_status === "not_started" ||
         !page.image_url,
     );
-    const failures: string[] = [];
 
-    for (const [index, page] of pagesNeedingImages.entries()) {
-      setMessage(`Draft approved. Generating illustration ${index + 1} of ${pagesNeedingImages.length}...`);
-      try {
-        await apiPost(
-          "/illustrations/generate",
-          {
-            story_page_id: page.id,
-          },
-          { token },
-        );
-      } catch (err) {
-        if (err instanceof ApiError) {
-          failures.push(`Page ${page.page_number}: ${err.message}`);
-        } else {
-          failures.push(`Page ${page.page_number}: Unable to generate illustration`);
-        }
-      }
+    if (pagesNeedingImages.length > 0) {
+      setMessage(
+        `Draft approved. Starting page image generation for ${pagesNeedingImages.length} page${pagesNeedingImages.length === 1 ? "" : "s"}...`,
+      );
+      await apiPost(
+        "/workflows/generate-page-illustrations",
+        {
+          story_draft_id: updatedDraft.id,
+          page_ids: pagesNeedingImages.map((page) => page.id),
+        },
+        { token, timeoutMs: 30000 },
+      );
     }
 
     setMessage("Building the preview book...");
-    await apiPost(`/editorial/story-drafts/${updatedDraft.id}/build-preview`, undefined, { token });
+    await apiPost(`/editorial/story-drafts/${updatedDraft.id}/build-preview`, undefined, { token, timeoutMs: 30000 });
 
-    if (failures.length > 0) {
-      setMessage(
-        `Draft approved. Preview book created, but ${failures.length} page image${failures.length === 1 ? "" : "s"} still need attention: ${failures.join(" | ")}`,
-      );
-      return;
-    }
-
-    setMessage("Draft approved. The page plan, illustrations, and preview book are ready for contextual review.");
+    setMessage(
+      pagesNeedingImages.length > 0
+        ? "Draft approved. Page images are generating in the background and the preview book is ready to refresh shortly."
+        : "Draft approved. The preview book is ready for contextual review.",
+    );
   }
 
   async function handleStatusAction(
@@ -180,6 +177,7 @@ export function DraftReviewEditor({
         action === "needs-revision" || action === "reject" ? { review_notes: reviewNotes || null } : undefined;
       const updated = await apiPost<StoryDraftReviewRead>(`/reviews/drafts/${draftId}/${action}`, payload, {
         token,
+        timeoutMs: 30000,
       });
       setDraft(updated);
       setFullText(updated.full_text);
