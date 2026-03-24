@@ -333,6 +333,7 @@ function ReaderPageContent() {
         if (!isPreviewMode) {
           try {
             const progress = await apiGet<ReadingProgressRead>("/reader/progress", {
+              token: authToken,
               query: {
                 reader_identifier: readerIdentifier,
                 book_id: bookId,
@@ -895,11 +896,12 @@ function ReaderPageContent() {
       return;
     }
 
+    const authToken = isAuthenticated ? token : null;
     const readerIdentifier = getReaderIdentifier(user);
     const payload = {
       reader_identifier: readerIdentifier,
       book_id: book.book_id,
-      child_profile_id: selectedChildProfile?.id,
+      child_profile_id: authenticatedChildProfileId,
       current_page_number: currentPage.page_number,
       completed: canReadFullBook && currentPage.page_number >= lastPageNumber,
     };
@@ -909,20 +911,21 @@ function ReaderPageContent() {
       return;
     }
 
-    void apiPost<ReadingProgressRead>("/reader/progress", payload)
+    void apiPost<ReadingProgressRead>("/reader/progress", payload, { token: authToken })
       .then((progress) => setSavedProgress(progress))
       .catch(() => undefined);
-  }, [authLoading, book, canReadFullBook, currentPage, isOnline, lastPageNumber, readyToSync, selectedChildProfile?.id, user]);
+  }, [authLoading, authenticatedChildProfileId, book, canReadFullBook, currentPage, isAuthenticated, isOnline, lastPageNumber, readyToSync, token, user]);
 
   function handleMarkFinished() {
     if (!book || !currentPage) {
       return;
     }
+    const authToken = isAuthenticated ? token : null;
     const readerIdentifier = getReaderIdentifier(user);
     const payload = {
       reader_identifier: readerIdentifier,
       book_id: book.book_id,
-      child_profile_id: selectedChildProfile?.id,
+      child_profile_id: authenticatedChildProfileId,
       current_page_number: lastPageNumber,
       completed: canReadFullBook,
     };
@@ -930,7 +933,7 @@ function ReaderPageContent() {
       void queueSyncAction("reading_progress", payload);
       return;
     }
-    void apiPost<ReadingProgressRead>("/reader/progress", payload)
+    void apiPost<ReadingProgressRead>("/reader/progress", payload, { token: authToken })
       .then((progress) => setSavedProgress(progress))
       .catch(() => undefined);
   }
@@ -945,7 +948,7 @@ function ReaderPageContent() {
       const { packageRecord, offlineRecord } = await downloadBookPackageForOffline(book.book_id, {
         token,
         language: effectiveLanguage,
-        childProfileId: selectedChildProfile?.id,
+        childProfileId: authenticatedChildProfileId,
       });
       setOfflinePackage(offlineRecord);
       setUsingOfflinePackage(false);
@@ -1012,7 +1015,7 @@ function ReaderPageContent() {
         "/read-along/sessions",
         {
           book_id: book.book_id,
-          child_profile_id: selectedChildProfile?.id,
+          child_profile_id: authenticatedChildProfileId,
           language: effectiveLanguage,
           current_page_number: currentPage.page_number,
           playback_state: "paused",
@@ -1040,7 +1043,7 @@ function ReaderPageContent() {
         "/read-along/join",
         {
           join_code: joinCode,
-          child_profile_id: selectedChildProfile?.id,
+          child_profile_id: authenticatedChildProfileId,
         },
         { token },
       );
