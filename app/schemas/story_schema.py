@@ -137,6 +137,7 @@ class StoryDraftGenerateRequest(SQLModel):
 
 
 class StoryDraftReviewUpdate(SQLModel):
+    title: str | None = None
     review_notes: str | None = None
     full_text: str | None = None
     approved_text: str | None = None

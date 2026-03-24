@@ -16,6 +16,7 @@ export function DraftReviewEditor({
   token: string | null;
 }) {
   const [draft, setDraft] = useState<StoryDraftReviewRead | null>(null);
+  const [title, setTitle] = useState("");
   const [fullText, setFullText] = useState("");
   const [approvedText, setApprovedText] = useState("");
   const [reviewNotes, setReviewNotes] = useState("");
@@ -35,6 +36,7 @@ export function DraftReviewEditor({
     try {
       const response = await apiGet<StoryDraftReviewRead>(`/reviews/drafts/${draftId}`, { token });
       setDraft(response);
+      setTitle(response.title);
       setFullText(response.full_text);
       setApprovedText(response.approved_text || "");
       setReviewNotes(response.review_notes || "");
@@ -63,6 +65,7 @@ export function DraftReviewEditor({
       const updated = await apiPatch<StoryDraftReviewRead>(
         `/reviews/drafts/${draftId}`,
         {
+          title,
           full_text: fullText,
           approved_text: approvedText || null,
           review_notes: reviewNotes || null,
@@ -71,6 +74,7 @@ export function DraftReviewEditor({
         { token },
       );
       setDraft(updated);
+      setTitle(updated.title);
       setFullText(updated.full_text);
       setApprovedText(updated.approved_text || "");
       setReviewNotes(updated.review_notes || "");
@@ -180,6 +184,7 @@ export function DraftReviewEditor({
         timeoutMs: 30000,
       });
       setDraft(updated);
+      setTitle(updated.title);
       setFullText(updated.full_text);
       setApprovedText(updated.approved_text || "");
       setReviewNotes(updated.review_notes || "");
@@ -217,7 +222,14 @@ export function DraftReviewEditor({
       <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h2 className="text-2xl font-semibold text-slate-900">{draft.title}</h2>
+            <label className="block">
+              <span className="mb-2 block text-sm font-medium text-slate-700">Title</span>
+              <input
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-2xl font-semibold text-slate-900 outline-none"
+              />
+            </label>
             <p className="mt-2 text-sm text-slate-600">{draft.summary}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
