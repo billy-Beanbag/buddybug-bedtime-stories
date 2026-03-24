@@ -1,3 +1,4 @@
+import base64
 from pathlib import Path
 from urllib.parse import quote, unquote, urljoin, urlparse
 
@@ -47,6 +48,25 @@ def get_local_asset_path_from_url(path_or_url: str) -> Path:
 def get_image_asset_validation_error(path_or_url: str | None) -> str | None:
     if not path_or_url:
         return "Image URL is missing."
+
+    if path_or_url.startswith("data:"):
+        try:
+            header, payload = path_or_url.split(",", 1)
+        except ValueError:
+            return "Image data URL is malformed."
+        is_base64 = ";base64" in header
+        mime_type = header[5:].split(";", 1)[0].strip().lower()
+        try:
+            raw = base64.b64decode(payload) if is_base64 else unquote(payload).encode("utf-8")
+        except Exception:
+            return "Image data URL could not be decoded."
+        if not raw:
+            return "Image data URL is empty."
+        if mime_type == "image/svg+xml":
+            text_sample = raw[:512].decode("utf-8", errors="ignore").lower()
+            if "<svg" not in text_sample:
+                return "Image data URL does not contain a valid SVG payload."
+        return None
 
     asset_path = get_local_asset_path_from_url(path_or_url)
     if not asset_path.exists() or not asset_path.is_file():

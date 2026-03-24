@@ -1,4 +1,5 @@
 import html
+import base64
 
 import httpx
 from fastapi import HTTPException, status
@@ -113,6 +114,11 @@ def _build_mock_illustration_svg(
 </svg>
 """
     return svg.encode("utf-8")
+
+
+def _svg_bytes_to_data_url(svg_bytes: bytes) -> str:
+    encoded = base64.b64encode(svg_bytes).decode("ascii")
+    return f"data:image/svg+xml;base64,{encoded}"
 
 
 def _apply_regeneration_feedback_to_prompt(base_prompt: str, generation_notes: str | None) -> str:
@@ -243,13 +249,8 @@ def generate_mock_illustration(
         override_prompt=override_prompt,
     )
     version_number = determine_next_version_number(session, story_page.id)
-    asset_path = build_mock_image_path(
-        story_draft_id=story_page.story_draft_id,
-        page_number=story_page.page_number,
-        version_number=version_number,
-    )
-    save_bytes(asset_path, _build_mock_illustration_svg(story_page=story_page, prompt_package=prompt_package))
-    image_url = get_asset_url(asset_path)
+    svg_bytes = _build_mock_illustration_svg(story_page=story_page, prompt_package=prompt_package)
+    image_url = _svg_bytes_to_data_url(svg_bytes)
 
     illustration = Illustration(
         story_page_id=story_page.id,

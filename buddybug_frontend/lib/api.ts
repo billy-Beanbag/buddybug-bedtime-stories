@@ -28,6 +28,9 @@ export function resolveApiUrl(path: string | null | undefined) {
   if (!path) {
     return "";
   }
+  if (path.startsWith("data:")) {
+    return path;
+  }
   if (path.startsWith("http://") || path.startsWith("https://")) {
     try {
       const absolute = new URL(path);
