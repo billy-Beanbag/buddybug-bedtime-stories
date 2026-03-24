@@ -29,6 +29,19 @@ export function resolveApiUrl(path: string | null | undefined) {
     return "";
   }
   if (path.startsWith("http://") || path.startsWith("https://")) {
+    try {
+      const absolute = new URL(path);
+      const apiBase = getApiBaseUrl();
+      const apiBaseUrl = new URL(apiBase);
+      if (
+        (absolute.hostname === "127.0.0.1" || absolute.hostname === "localhost") &&
+        absolute.pathname.startsWith("/mock-assets/")
+      ) {
+        return `${apiBaseUrl.origin}${absolute.pathname}${absolute.search}${absolute.hash}`;
+      }
+    } catch {
+      return path;
+    }
     return path;
   }
   return `${getApiBaseUrl()}${path.startsWith("/") ? path : `/${path}`}`;
