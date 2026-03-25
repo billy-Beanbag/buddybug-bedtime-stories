@@ -38,6 +38,16 @@ const LIBRARY_ROUTE_STORAGE_KEY = "buddybug.library-route";
 
 type LibraryRouteFilter = "all" | typeof BEDTIME_LANE | typeof ADVENTURE_LANE;
 
+const LIBRARY_ROUTE_OPTIONS: Array<{
+  key: LibraryRouteFilter;
+  label: string;
+  description: string;
+}> = [
+  { key: "all", label: "All stories", description: "Show every published 3-7 story in this view." },
+  { key: BEDTIME_LANE, label: "Bedtime stories", description: "Calm, cosy stories for winding down." },
+  { key: ADVENTURE_LANE, label: "Adventure stories", description: "Playful, plot-led stories with more energy." },
+];
+
 function readStoredLibraryRoute(): LibraryRouteFilter {
   if (typeof window === "undefined") {
     return "all";
@@ -326,11 +336,7 @@ export default function LibraryPage() {
         <div className="mt-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Choose your story route</p>
           <div className="mt-3 grid gap-2 sm:grid-cols-3">
-            {[
-              { key: "all" as const, label: "All stories", description: "Show every published 3-7 story in this view." },
-              { key: BEDTIME_LANE as const, label: "Bedtime stories", description: "Calm, cosy stories for winding down." },
-              { key: ADVENTURE_LANE as const, label: "Adventure stories", description: "Playful, plot-led stories with more energy." },
-            ].map((route) => (
+            {LIBRARY_ROUTE_OPTIONS.map((route) => (
               <button
                 key={route.key}
                 type="button"
