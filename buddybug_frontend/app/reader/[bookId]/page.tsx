@@ -1204,52 +1204,69 @@ function ReaderPageContent() {
         )
       ) : null}
 
-      <details className="rounded-[2rem] border border-white/70 bg-white/85 p-5 shadow-sm">
-        <summary className="cursor-pointer list-none text-lg font-semibold text-slate-900">
-          Reader options
-        </summary>
-        <p className="mt-2 text-sm text-slate-600">
-          Open this when you want downloads or saved-story options.
-        </p>
-
-        <div className="mt-4 space-y-4">
-          {isAuthenticated ? (
-            <section className="space-y-3 rounded-[1.5rem] border border-slate-200 bg-slate-50/70 p-4">
-              <h3 className="text-base font-semibold text-slate-900">Reader options</h3>
-              <SaveBookButton
-                bookId={book.book_id}
-                token={token}
-                childProfileId={selectedChildProfile?.id}
-                language={book.language}
-                initialItem={libraryItem}
-                canSaveOffline={offlineDownloadsEnabled && Boolean(downloadAccess?.can_download_full_book)}
-                onChanged={setLibraryItem}
-              />
-              {offlineDownloadsEnabled && downloadAccess?.can_download_full_book ? (
-                <button
-                  type="button"
-                  onClick={handleDownloadPackage}
-                  disabled={downloadLoading}
-                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 disabled:opacity-60"
-                >
-                  {downloadLoading
-                    ? "Preparing download..."
-                    : downloadAccess.package_available
-                      ? "Download offline package"
-                      : "Prepare offline package"}
-                </button>
-              ) : (
-                <p className="text-sm text-slate-600">
-                  {offlineDownloadsEnabled
-                    ? (downloadAccess?.reason || "Premium subscription required for offline downloads.")
-                    : "Offline downloads are not enabled for this release yet."}
-                </p>
-              )}
-              {downloadError ? <p className="text-sm text-rose-600">{downloadError}</p> : null}
-            </section>
-          ) : null}
+      <section className="space-y-4 rounded-[2rem] border border-white/70 bg-white/85 p-5 shadow-sm">
+        <div>
+          <h3 className="text-lg font-semibold text-slate-900">Save and downloads</h3>
+          <p className="mt-1 text-sm text-slate-600">
+            Keep this story handy for later or prepare it for offline reading.
+          </p>
         </div>
-      </details>
+
+        {isAuthenticated ? (
+          <div className="space-y-3 rounded-[1.5rem] border border-slate-200 bg-slate-50/70 p-4">
+            <SaveBookButton
+              bookId={book.book_id}
+              token={token}
+              childProfileId={selectedChildProfile?.id}
+              language={book.language}
+              initialItem={libraryItem}
+              canSaveOffline={offlineDownloadsEnabled && Boolean(downloadAccess?.can_download_full_book)}
+              onChanged={setLibraryItem}
+            />
+            {offlineDownloadsEnabled && downloadAccess?.can_download_full_book ? (
+              <button
+                type="button"
+                onClick={handleDownloadPackage}
+                disabled={downloadLoading}
+                className="min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 disabled:opacity-60"
+              >
+                {downloadLoading
+                  ? "Preparing download..."
+                  : downloadAccess.package_available
+                    ? "Download offline package"
+                    : "Prepare offline package"}
+              </button>
+            ) : (
+              <p className="text-sm text-slate-600">
+                {offlineDownloadsEnabled
+                  ? (downloadAccess?.reason || "Premium subscription required for offline downloads.")
+                  : "Offline downloads are not enabled for this release yet."}
+              </p>
+            )}
+            {downloadError ? <p className="text-sm text-rose-600">{downloadError}</p> : null}
+          </div>
+        ) : (
+          <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50/70 p-4">
+            <p className="text-sm text-slate-600">
+              Sign in to save stories and prepare offline reading on this device.
+            </p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <Link
+                href="/login"
+                className="min-h-12 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-center font-medium text-slate-900"
+              >
+                Log in
+              </Link>
+              <Link
+                href="/register"
+                className="min-h-12 rounded-2xl bg-slate-900 px-4 py-3 text-center font-medium text-white"
+              >
+                Create account
+              </Link>
+            </div>
+          </div>
+        )}
+      </section>
 
       {activeBedtimePackContext ? (
         <section className="space-y-3 rounded-[2rem] border border-indigo-100 bg-indigo-50/80 p-5 shadow-sm">
