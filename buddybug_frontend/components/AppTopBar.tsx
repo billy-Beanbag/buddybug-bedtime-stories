@@ -24,7 +24,6 @@ const ROOT_TITLES: Record<string, string> = {
   "/family-digest": "Family Digest",
   "/bedtime-pack": "Bedtime Pack",
   "/reading-plans": "Reading Plans",
-  "/read-along": "Read Along",
   "/privacy": "Privacy & Data",
   "/parental-controls": "Parental Controls",
   "/gifts": "Gift Buddybug",

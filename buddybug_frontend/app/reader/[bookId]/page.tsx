@@ -11,8 +11,6 @@ import { BedtimeModeBadge } from "@/components/BedtimeModeBadge";
 import { OfflineBookBadge } from "@/components/OfflineBookBadge";
 import { OfflineUnavailableState } from "@/components/OfflineUnavailableState";
 import { PreviewIllustrationReviewPanel } from "@/components/admin/PreviewIllustrationReviewPanel";
-import { ReadAlongPanel } from "@/components/ReadAlongPanel";
-import { ReadAlongSessionBadge } from "@/components/ReadAlongSessionBadge";
 import { RecommendedBookCard } from "@/components/RecommendedBookCard";
 import { ReaderControls } from "@/components/ReaderControls";
 import { ReaderPageView } from "@/components/ReaderPageView";
@@ -1128,7 +1126,6 @@ function ReaderPageContent() {
               savedForOffline={Boolean(libraryItem?.saved_for_offline)}
               downloadedAt={libraryItem?.downloaded_at || offlinePackage?.saved_at || null}
             />
-            {activeReadAlongDetail ? <ReadAlongSessionBadge detail={activeReadAlongDetail} compact /> : null}
           </div>
 
           <div className="mt-3">
@@ -1209,26 +1206,13 @@ function ReaderPageContent() {
 
       <details className="rounded-[2rem] border border-white/70 bg-white/85 p-5 shadow-sm">
         <summary className="cursor-pointer list-none text-lg font-semibold text-slate-900">
-          Reading together and extras
+          Reader options
         </summary>
         <p className="mt-2 text-sm text-slate-600">
-          Open this when you want shared reading, downloads, or saved-story options.
+          Open this when you want downloads or saved-story options.
         </p>
 
         <div className="mt-4 space-y-4">
-          <ReadAlongPanel
-            isAuthenticated={isAuthenticated}
-            isOnline={isOnline}
-            bookId={book.book_id}
-            activeSession={activeReadAlongDetail}
-            loading={readAlongLoading}
-            actionLoading={readAlongActionLoading}
-            error={readAlongError}
-            onCreate={handleCreateReadAlongSession}
-            onJoin={handleJoinReadAlongSession}
-            onEnd={handleEndReadAlongSession}
-          />
-
           {isAuthenticated ? (
             <section className="space-y-3 rounded-[1.5rem] border border-slate-200 bg-slate-50/70 p-4">
               <h3 className="text-base font-semibold text-slate-900">Reader options</h3>

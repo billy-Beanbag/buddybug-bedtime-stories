@@ -554,12 +554,6 @@ export default function ProfilePage() {
           Open settings
         </Link>
         <Link
-          href="/read-along"
-          className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-center font-medium text-slate-900"
-        >
-          Open Read Along
-        </Link>
-        <Link
           href="/family-digest"
           className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-center font-medium text-slate-900"
         >
