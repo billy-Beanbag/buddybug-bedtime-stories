@@ -1,5 +1,12 @@
+import { Nunito } from "next/font/google";
+
 import { resolveApiUrl } from "@/lib/api";
 import type { ReaderBookDetail, ReaderPageRead } from "@/lib/types";
+
+const storyReadingFont = Nunito({
+  subsets: ["latin"],
+  weight: ["500", "700"],
+});
 
 interface ReaderPageViewProps {
   book: ReaderBookDetail;
@@ -55,7 +62,11 @@ export function ReaderPageView({ book, page }: ReaderPageViewProps) {
         page.layout_type === "cover") && (
         <article className="min-h-0 overflow-hidden rounded-[1.5rem] bg-slate-50/85">
           <div className="h-full max-h-[28vh] overflow-y-auto p-4 sm:max-h-[30vh] sm:p-5 md:max-h-none md:min-h-[360px] md:p-6">
-            <p className="whitespace-pre-wrap text-[15px] leading-7 text-slate-800 sm:text-base">{page.text_content}</p>
+            <p
+              className={`${storyReadingFont.className} whitespace-pre-wrap text-[18px] leading-8 text-slate-800 sm:text-[19px] sm:leading-9 md:text-[20px] md:leading-9`}
+            >
+              {page.text_content}
+            </p>
           </div>
         </article>
       )}
