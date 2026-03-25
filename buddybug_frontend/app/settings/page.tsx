@@ -7,19 +7,15 @@ import { AppSettingsList } from "@/components/AppSettingsList";
 import { DownloadsSummaryCard } from "@/components/DownloadsSummaryCard";
 import { useAuth } from "@/context/AuthContext";
 import { useChildProfiles } from "@/context/ChildProfileContext";
-import { useConnectivity } from "@/context/ConnectivityContext";
 import { useLocale } from "@/context/LocaleContext";
 import { trackSettingsOpened } from "@/lib/analytics";
 import { fetchSavedLibrary } from "@/lib/library";
-import { listOfflineBookPackages } from "@/lib/offline-storage";
 
 export default function SettingsPage() {
   const { token, user } = useAuth();
   const { childProfiles } = useChildProfiles();
   const { locale } = useLocale();
-  const { pendingSyncCount } = useConnectivity();
   const [savedCount, setSavedCount] = useState(0);
-  const [offlineCount, setOfflineCount] = useState(0);
 
   useEffect(() => {
     void trackSettingsOpened({ token, user, language: locale });
@@ -34,26 +30,6 @@ export default function SettingsPage() {
       .then((response) => setSavedCount(response.items.length))
       .catch(() => setSavedCount(0));
   }, [token]);
-
-  useEffect(() => {
-    async function loadOfflineCount() {
-      try {
-        const offlinePackages = await listOfflineBookPackages();
-        setOfflineCount(offlinePackages.length);
-      } catch {
-        setOfflineCount(0);
-      }
-    }
-
-    void loadOfflineCount();
-    function handleOfflinePackagesChanged() {
-      void loadOfflineCount();
-    }
-    window.addEventListener("buddybug:offline-packages-changed", handleOfflinePackagesChanged as EventListener);
-    return () => {
-      window.removeEventListener("buddybug:offline-packages-changed", handleOfflinePackagesChanged as EventListener);
-    };
-  }, []);
 
   const settingsItems = useMemo(
     () => {
@@ -95,10 +71,10 @@ export default function SettingsPage() {
           badge: null,
         },
         {
-          href: "/settings/downloads",
-          title: "Downloads",
-          description: "Saved books, offline copies, and queued sync actions.",
-          badge: offlineCount ? `${offlineCount} offline` : pendingSyncCount ? `${pendingSyncCount} syncing` : null,
+          href: "/saved",
+          title: "Saved Library",
+          description: "Stories saved to your Buddybug account for easy access later.",
+          badge: savedCount ? `${savedCount} saved` : null,
         },
         {
           href: "/promo",
@@ -116,18 +92,18 @@ export default function SettingsPage() {
 
       return items;
     },
-    [childProfiles.length, offlineCount, pendingSyncCount, user?.subscription_tier],
+    [childProfiles.length, savedCount, user?.subscription_tier],
   );
 
   return (
     <div className="space-y-4">
       <AppSectionCard
         title="Settings"
-        description="A packaging-ready home for family controls, downloads, privacy, and future wrapped-app settings."
+        description="A packaging-ready home for family controls, saved stories, privacy, and future wrapped-app settings."
       >
         <AppSettingsList items={settingsItems} />
       </AppSectionCard>
-      <DownloadsSummaryCard offlineCount={offlineCount} savedCount={savedCount} />
+      <DownloadsSummaryCard savedCount={savedCount} />
     </div>
   );
 }

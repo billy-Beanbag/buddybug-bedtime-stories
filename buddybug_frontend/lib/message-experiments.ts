@@ -20,7 +20,7 @@ export const DEFAULT_MESSAGE_EXPERIMENT_BUNDLE: MessageExperimentBundleResponse 
     experiment_key: "preview_wall_copy",
     variant: "control",
     title: "You’ve reached the free preview",
-    description: "Upgrade to keep reading full stories, unlock narrated playback, and save favorites for later.",
+    description: "Upgrade to keep reading full stories, unlock narrated playback, and save favorites to your library for later.",
     primary_cta_label: "Upgrade to Premium",
     guest_primary_label: "Login to upgrade",
     guest_secondary_label: "Create account",
@@ -30,7 +30,7 @@ export const DEFAULT_MESSAGE_EXPERIMENT_BUNDLE: MessageExperimentBundleResponse 
     variant: "control",
     headline: "Simple plans for trying Buddybug and upgrading when it clicks",
     description:
-      "Start with free previews and discovery. Upgrade for full story access, narrated playback, offline-ready saves, premium voices, and richer family personalization.",
+      "Start with free previews and discovery. Upgrade for full story access, narrated playback, saved-library tools, premium voices, and richer family personalization.",
     cta_headline: "Start free today and upgrade when Buddybug becomes part of your routine",
     cta_description:
       "Free is enough to explore. Premium is there when your family wants the full bedtime story experience.",
@@ -42,7 +42,7 @@ export const DEFAULT_MESSAGE_EXPERIMENT_BUNDLE: MessageExperimentBundleResponse 
     variant: "control",
     title: "Upgrade when Buddybug becomes part of your routine",
     description:
-      "Premium unlocks full stories, narration, offline reading, and richer daily recommendations for your family.",
+      "Premium unlocks full stories, narration, saved-library tools, and richer daily recommendations for your family.",
     cta_label: "Upgrade to Premium",
   },
 };

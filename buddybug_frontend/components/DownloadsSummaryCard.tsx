@@ -5,25 +5,18 @@ import Link from "next/link";
 import { AppSectionCard } from "@/components/AppSectionCard";
 
 interface DownloadsSummaryCardProps {
-  offlineCount: number;
   savedCount: number;
 }
 
-export function DownloadsSummaryCard({ offlineCount, savedCount }: DownloadsSummaryCardProps) {
+export function DownloadsSummaryCard({ savedCount }: DownloadsSummaryCardProps) {
   return (
     <AppSectionCard
-      title="Downloads and offline reading"
-      description="Keep track of what is saved in your library versus what is cached on this device."
+      title="Saved library"
+      description="Saved stories live in your Buddybug account, so they are easy to reopen whenever you sign in."
     >
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-2xl bg-slate-50 px-4 py-3">
-          <div className="text-sm text-slate-500">Saved books</div>
-          <div className="mt-1 text-2xl font-semibold text-slate-900">{savedCount}</div>
-        </div>
-        <div className="rounded-2xl bg-slate-50 px-4 py-3">
-          <div className="text-sm text-slate-500">Available offline here</div>
-          <div className="mt-1 text-2xl font-semibold text-slate-900">{offlineCount}</div>
-        </div>
+      <div className="rounded-2xl bg-slate-50 px-4 py-3">
+        <div className="text-sm text-slate-500">Saved books</div>
+        <div className="mt-1 text-2xl font-semibold text-slate-900">{savedCount}</div>
       </div>
       <Link
         href="/saved"

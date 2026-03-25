@@ -61,7 +61,7 @@ function getScreenTitle(pathname: string) {
     return "Notifications";
   }
   if (pathname.startsWith("/settings/downloads")) {
-    return "Downloads";
+    return "Saved Library";
   }
   if (pathname.startsWith("/settings/about")) {
     return "About";

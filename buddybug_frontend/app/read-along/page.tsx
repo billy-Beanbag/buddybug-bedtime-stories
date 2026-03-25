@@ -132,8 +132,8 @@ export default function ReadAlongPage() {
         </p>
         {!isOnline ? (
           <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            Read-along needs a live connection right now. Your saved stories still work offline, but shared sessions do
-            not sync until you’re back online.
+            Read-along needs a live connection right now. Your saved library is still available when you reconnect, but
+            shared sessions do not sync until you’re back online.
           </div>
         ) : null}
       </section>

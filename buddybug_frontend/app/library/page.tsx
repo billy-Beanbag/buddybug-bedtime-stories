@@ -7,7 +7,6 @@ import { BookCard } from "@/components/BookCard";
 import { BedtimeModeBadge } from "@/components/BedtimeModeBadge";
 import { EmptyState } from "@/components/EmptyState";
 import { LoadingState } from "@/components/LoadingState";
-import { OfflineBookBadge } from "@/components/OfflineBookBadge";
 import { RecommendedBookCard } from "@/components/RecommendedBookCard";
 import { SaveBookButton } from "@/components/SaveBookButton";
 import { useAuth } from "@/context/AuthContext";
@@ -23,14 +22,7 @@ import {
 } from "@/lib/analytics";
 import { apiGet } from "@/lib/api";
 import { fetchSavedLibrary } from "@/lib/library";
-import { listOfflineBookPackages } from "@/lib/offline-storage";
-import type {
-  OfflineBookPackageRecord,
-  RecommendationsResponse,
-  RecommendedBookScore,
-  ReaderBookSummary,
-  UserLibraryItemRead,
-} from "@/lib/types";
+import type { RecommendationsResponse, RecommendedBookScore, ReaderBookSummary, UserLibraryItemRead } from "@/lib/types";
 
 const BEDTIME_LANE = "bedtime_3_7";
 const ADVENTURE_LANE = "story_adventures_3_7";
@@ -79,14 +71,12 @@ export default function LibraryPage() {
   const [books, setBooks] = useState<ReaderBookSummary[]>([]);
   const [recommended, setRecommended] = useState<RecommendedBookScore[]>([]);
   const [savedItemsByBookId, setSavedItemsByBookId] = useState<Record<number, UserLibraryItemRead>>({});
-  const [offlinePackagesByBookId, setOfflinePackagesByBookId] = useState<Record<number, OfflineBookPackageRecord>>({});
   const [selectedAgeBand, setSelectedAgeBand] = useState<"all" | "3-7" | "8-12">("all");
   const [selectedRoute, setSelectedRoute] = useState<LibraryRouteFilter>("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const ageBand812Enabled = isEnabled("age_band_8_12_enabled");
-  const offlineDownloadsEnabled = isEnabled("offline_downloads_enabled");
   const effectiveLanguage = selectedChildProfile?.language || locale;
   const effectiveAgeBand =
     selectedChildProfile?.age_band || (selectedAgeBand === "all" ? undefined : selectedAgeBand);
@@ -151,26 +141,6 @@ export default function LibraryPage() {
       setSelectedAgeBand("3-7");
     }
   }, [ageBand812Enabled, selectedAgeBand]);
-
-  useEffect(() => {
-    async function loadOfflinePackages() {
-      try {
-        const packages = await listOfflineBookPackages();
-        setOfflinePackagesByBookId(Object.fromEntries(packages.map((item) => [item.book_id, item])));
-      } catch {
-        setOfflinePackagesByBookId({});
-      }
-    }
-
-    void loadOfflinePackages();
-    function handleOfflinePackagesChanged() {
-      void loadOfflinePackages();
-    }
-    window.addEventListener("buddybug:offline-packages-changed", handleOfflinePackagesChanged as EventListener);
-    return () => {
-      window.removeEventListener("buddybug:offline-packages-changed", handleOfflinePackagesChanged as EventListener);
-    };
-  }, []);
 
   useEffect(() => {
     async function loadBooks() {
@@ -402,20 +372,12 @@ export default function LibraryPage() {
                 statusLabel={hasPremiumAccess ? t("premium") : t("preview")}
               />
               <div className="flex items-center justify-between gap-3 rounded-3xl border border-white/10 bg-[linear-gradient(135deg,#111827_0%,#1e1b4b_42%,#312e81_74%,#4338ca_100%)] px-4 py-3 text-white shadow-[0_20px_50px_rgba(30,41,59,0.16)]">
-                <div className="flex flex-wrap gap-2">
-                  <OfflineBookBadge
-                    availableOffline={Boolean(offlinePackagesByBookId[book.book_id])}
-                    savedForOffline={Boolean(savedItemsByBookId[book.book_id]?.saved_for_offline)}
-                    downloadedAt={savedItemsByBookId[book.book_id]?.downloaded_at}
-                  />
-                </div>
+                <div className="text-sm text-slate-200">Save stories to your Buddybug library for quick access later.</div>
                 <SaveBookButton
                   bookId={book.book_id}
                   token={token}
                   childProfileId={selectedChildProfile?.id}
-                  language={book.language}
                   initialItem={savedItemsByBookId[book.book_id] ?? null}
-                  canSaveOffline={hasPremiumAccess && offlineDownloadsEnabled}
                   onChanged={(item) =>
                     setSavedItemsByBookId((current) => {
                       const next = { ...current };

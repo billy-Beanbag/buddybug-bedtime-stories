@@ -15,7 +15,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: APP_NAME,
-  description: "Installable bedtime story reading with offline-ready Buddybug favorites.",
+  description: "Installable bedtime story reading with saved-library favourites for families.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

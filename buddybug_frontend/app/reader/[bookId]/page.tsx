@@ -8,7 +8,6 @@ import { EmptyState } from "@/components/EmptyState";
 import { LoadingState } from "@/components/LoadingState";
 import { BedtimePackSummaryCard } from "@/components/BedtimePackSummaryCard";
 import { BedtimeModeBadge } from "@/components/BedtimeModeBadge";
-import { OfflineBookBadge } from "@/components/OfflineBookBadge";
 import { OfflineUnavailableState } from "@/components/OfflineUnavailableState";
 import { PreviewIllustrationReviewPanel } from "@/components/admin/PreviewIllustrationReviewPanel";
 import { RecommendedBookCard } from "@/components/RecommendedBookCard";
@@ -31,7 +30,6 @@ import {
   trackBookOpened,
   trackMessageVariantClicked,
   trackMessageVariantExposed,
-  trackOfflineBookSaved,
   trackOnboardingCompleted,
   trackOnboardingFirstStoryOpened,
   trackOfflineReaderOpened,
@@ -43,7 +41,7 @@ import {
 } from "@/lib/analytics";
 import { apiGet, apiPatch, apiPost, ApiError } from "@/lib/api";
 import { getReaderIdentifier } from "@/lib/auth";
-import { downloadBookPackageForOffline, fetchDownloadAccess, fetchSavedLibrary, markLibraryBookOpened } from "@/lib/library";
+import { fetchSavedLibrary, markLibraryBookOpened } from "@/lib/library";
 import { fetchMessageExperimentBundle } from "@/lib/message-experiments";
 import { queueSyncAction } from "@/lib/offline-sync";
 import { getOfflineBookPackage } from "@/lib/offline-storage";
@@ -61,7 +59,6 @@ import type {
   RecommendationsResponse,
   RecommendedBookScore,
   ReaderAccessResponse,
-  ReaderDownloadAccessResponse,
   ReaderNarrationResponse,
   ReadingProgressRead,
   UserLibraryItemRead,
@@ -157,11 +154,7 @@ function ReaderPageContent() {
   const [upgradeError, setUpgradeError] = useState<string | null>(null);
   const [moreLikeThis, setMoreLikeThis] = useState<RecommendedBookScore[]>([]);
   const [libraryItem, setLibraryItem] = useState<UserLibraryItemRead | null>(null);
-  const [downloadAccess, setDownloadAccess] = useState<ReaderDownloadAccessResponse | null>(null);
-  const [offlinePackage, setOfflinePackage] = useState<OfflineBookPackageRecord | null>(null);
   const [usingOfflinePackage, setUsingOfflinePackage] = useState(false);
-  const [downloadLoading, setDownloadLoading] = useState(false);
-  const [downloadError, setDownloadError] = useState<string | null>(null);
   const [previewWallTracked, setPreviewWallTracked] = useState(false);
   const [completionTracked, setCompletionTracked] = useState(false);
   const [onboardingStoryTracked, setOnboardingStoryTracked] = useState(false);
@@ -182,7 +175,6 @@ function ReaderPageContent() {
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
 
   const narratedStoriesEnabled = isEnabled("narrated_stories_enabled");
-  const offlineDownloadsEnabled = isEnabled("offline_downloads_enabled");
   const effectiveLanguage = selectedChildProfile?.language || locale;
   const authenticatedChildProfileId = isAuthenticated && token ? (selectedChildProfile?.id ?? undefined) : undefined;
 
@@ -214,7 +206,6 @@ function ReaderPageContent() {
 
       try {
         const cachedOfflinePackage = await getOfflineBookPackage(bookId, effectiveLanguage).catch(() => null);
-        setOfflinePackage(cachedOfflinePackage);
         setUpgradeError(null);
         const authToken = isAuthenticated ? token : null;
         if (!isOnline) {
@@ -321,7 +312,6 @@ function ReaderPageContent() {
         setBook(bookDetail);
         setReaderAccess(access);
         setUsingOfflinePackage(false);
-        setDownloadError(null);
         void trackBookOpened(bookDetail.book_id, {
           token: authToken,
           user,
@@ -368,22 +358,18 @@ function ReaderPageContent() {
           }
         }
         if (!isPreviewMode && isAuthenticated && authToken) {
-          const [savedLibrary, accessResponse] = await Promise.all([
+          const [savedLibrary] = await Promise.all([
             fetchSavedLibrary({ token: authToken, childProfileId: authenticatedChildProfileId }),
-            fetchDownloadAccess(bookId, { token: authToken, language: effectiveLanguage }),
           ]);
           setLibraryItem(savedLibrary.items.find((item) => item.book_id === bookId) ?? null);
-          setDownloadAccess(accessResponse);
           void markLibraryBookOpened(bookId, { token: authToken, childProfileId: authenticatedChildProfileId });
         } else {
           setLibraryItem(null);
-          setDownloadAccess(null);
         }
       } catch (err) {
         const cachedOfflinePackage = await getOfflineBookPackage(bookId, effectiveLanguage).catch(() => null);
         if (cachedOfflinePackage) {
           const offlineBook = buildOfflineBookDetail(cachedOfflinePackage);
-          setOfflinePackage(cachedOfflinePackage);
           setBook(offlineBook);
           setReaderAccess({
             book_id: offlineBook.book_id,
@@ -1076,51 +1062,6 @@ function ReaderPageContent() {
       .catch(() => undefined);
   }
 
-  async function handleDownloadPackage() {
-    if (!token || !book) {
-      return;
-    }
-    setDownloadLoading(true);
-    setDownloadError(null);
-    try {
-      const { packageRecord, offlineRecord } = await downloadBookPackageForOffline(book.book_id, {
-        token,
-        language: effectiveLanguage,
-        childProfileId: authenticatedChildProfileId,
-      });
-      setOfflinePackage(offlineRecord);
-      setUsingOfflinePackage(false);
-      setDownloadAccess({
-        book_id: book.book_id,
-        can_download_full_book: true,
-        package_available: true,
-        package_url: packageRecord.package_url,
-        reason: "Premium download available",
-      });
-      setLibraryItem((current) =>
-        current
-          ? {
-              ...current,
-              saved_for_offline: true,
-              downloaded_at: new Date().toISOString(),
-            }
-          : current,
-      );
-      void trackOfflineBookSaved(book.book_id, {
-        token,
-        user,
-        language: effectiveLanguage,
-        childProfileId: selectedChildProfile?.id,
-        source: "reader_page",
-        packageVersion: packageRecord.package_version,
-      });
-    } catch (err) {
-      setDownloadError(err instanceof Error ? err.message : "Unable to download this book");
-    } finally {
-      setDownloadLoading(false);
-    }
-  }
-
   async function handleUpgradeToPremium() {
     if (!token) {
       return;
@@ -1261,7 +1202,7 @@ function ReaderPageContent() {
               {readerAccess ? (
                 <span className="text-slate-600">
                   {usingOfflinePackage
-                    ? "Reading from your offline copy on this device."
+                    ? "Reading from a copy already saved on this device."
                     : readerAccess.can_read_full_book
                       ? t("premiumAccessUnlocked")
                       : t("freePreviewMessage")}
@@ -1277,11 +1218,6 @@ function ReaderPageContent() {
 
           <div className="mt-2.5 flex flex-wrap items-center gap-2">
             <BedtimeModeBadge active={Boolean(resolvedControls?.bedtime_mode_enabled)} />
-            <OfflineBookBadge
-              availableOffline={Boolean(offlinePackage)}
-              savedForOffline={Boolean(libraryItem?.saved_for_offline)}
-              downloadedAt={libraryItem?.downloaded_at || offlinePackage?.saved_at || null}
-            />
           </div>
 
           <div className="mt-2.5">
@@ -1361,9 +1297,9 @@ function ReaderPageContent() {
 
       <section className="space-y-4 rounded-[2rem] border border-white/70 bg-white/85 p-5 shadow-sm">
         <div>
-          <h3 className="text-lg font-semibold text-slate-900">Save and downloads</h3>
+          <h3 className="text-lg font-semibold text-slate-900">Save to your library</h3>
           <p className="mt-1 text-sm text-slate-600">
-            Keep this story handy for later or prepare it for offline reading.
+            Keep this story in your Buddybug account so it is easy to find again later.
           </p>
         </div>
 
@@ -1373,37 +1309,17 @@ function ReaderPageContent() {
               bookId={book.book_id}
               token={token}
               childProfileId={selectedChildProfile?.id}
-              language={book.language}
               initialItem={libraryItem}
-              canSaveOffline={offlineDownloadsEnabled && Boolean(downloadAccess?.can_download_full_book)}
               onChanged={setLibraryItem}
             />
-            {offlineDownloadsEnabled && downloadAccess?.can_download_full_book ? (
-              <button
-                type="button"
-                onClick={handleDownloadPackage}
-                disabled={downloadLoading}
-                className="min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 disabled:opacity-60"
-              >
-                {downloadLoading
-                  ? "Preparing download..."
-                  : downloadAccess.package_available
-                    ? "Download offline package"
-                    : "Prepare offline package"}
-              </button>
-            ) : (
-              <p className="text-sm text-slate-600">
-                {offlineDownloadsEnabled
-                  ? (downloadAccess?.reason || "Premium subscription required for offline downloads.")
-                  : "Offline downloads are not enabled for this release yet."}
-              </p>
-            )}
-            {downloadError ? <p className="text-sm text-rose-600">{downloadError}</p> : null}
+            <p className="text-sm text-slate-600">
+              Saved stories stay in your Buddybug library so you can reopen them quickly whenever you sign in.
+            </p>
           </div>
         ) : (
           <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50/70 p-4">
             <p className="text-sm text-slate-600">
-              Sign in to save stories and prepare offline reading on this device.
+              Sign in to save stories to your Buddybug library.
             </p>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <Link

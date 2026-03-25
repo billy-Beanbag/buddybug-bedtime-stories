@@ -27,8 +27,8 @@ const helpTopics = [
     description: "Questions about bedtime mode, age filtering, autoplay, or child-specific restrictions.",
   },
   {
-    title: "Downloads and offline help",
-    description: "Trouble with saved books, offline-ready packages, or missing downloads.",
+    title: "Saved library help",
+    description: "Questions about saved books, saved-library access, or finding a story again later.",
   },
   {
     title: "Premium access help",

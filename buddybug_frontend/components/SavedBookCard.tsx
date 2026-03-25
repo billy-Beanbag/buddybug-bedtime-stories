@@ -2,27 +2,15 @@
 
 import Link from "next/link";
 
-import { OfflineBookBadge } from "@/components/OfflineBookBadge";
 import { resolveApiUrl } from "@/lib/api";
-import type { ReaderBookSummary, ReaderDownloadAccessResponse, UserLibraryItemRead } from "@/lib/types";
+import type { ReaderBookSummary, UserLibraryItemRead } from "@/lib/types";
 
 interface SavedBookCardProps {
   book: ReaderBookSummary;
   item: UserLibraryItemRead;
-  downloadAccess?: ReaderDownloadAccessResponse | null;
-  offlineAvailable?: boolean;
-  onDownload?: () => void;
-  onRemoveOffline?: () => void;
 }
 
-export function SavedBookCard({
-  book,
-  item,
-  downloadAccess,
-  offlineAvailable = false,
-  onDownload,
-  onRemoveOffline,
-}: SavedBookCardProps) {
+export function SavedBookCard({ book, item }: SavedBookCardProps) {
   return (
     <article className="rounded-3xl border border-white/70 bg-white/85 p-4 shadow-sm">
       <div className="flex gap-4">
@@ -41,11 +29,9 @@ export function SavedBookCard({
                 {book.page_count} pages • {book.language.toUpperCase()} • {book.age_band}
               </p>
             </div>
-            <OfflineBookBadge
-              availableOffline={offlineAvailable}
-              savedForOffline={item.saved_for_offline}
-              downloadedAt={item.downloaded_at}
-            />
+            <span className="inline-flex rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700">
+              {item.status === "saved" ? "Saved" : "Library"}
+            </span>
           </div>
           <div className="flex flex-wrap gap-2">
             <Link
@@ -54,28 +40,8 @@ export function SavedBookCard({
             >
               Open story
             </Link>
-            {downloadAccess?.can_download_full_book ? (
-              <button
-                type="button"
-                onClick={onDownload}
-                className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900"
-              >
-                {offlineAvailable ? "Refresh offline copy" : "Save on this device"}
-              </button>
-            ) : null}
-            {offlineAvailable && onRemoveOffline ? (
-              <button
-                type="button"
-                onClick={onRemoveOffline}
-                className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-700"
-              >
-                Remove offline copy
-              </button>
-            ) : null}
           </div>
-          {!downloadAccess?.can_download_full_book && downloadAccess ? (
-            <p className="text-sm text-slate-600">{downloadAccess.reason}</p>
-          ) : null}
+          <p className="text-sm text-slate-600">Saved to your Buddybug library for quick access the next time you sign in.</p>
         </div>
       </div>
     </article>

@@ -5,7 +5,7 @@
   "display": "standalone",
   "background_color": "#eef2ff",
   "theme_color": "#c7d2fe",
-  "description": "Buddybug bedtime stories with installable reading and offline-ready story packages.",
+  "description": "Buddybug bedtime stories with installable reading and a saved library for families.",
   "icons": [
     {
       "src": "/icons/icon-192.svg",

@@ -45,7 +45,7 @@ export default function ForParentsPage() {
         <div className="rounded-3xl border border-white/70 bg-white/80 p-6 shadow-sm">
           <h2 className="text-2xl font-semibold text-slate-900">Free Plan or Premium</h2>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            The Free Plan keeps things simple with 3 stories a week and 1 child profile. Premium is $9.99 and adds unlimited stories, bedtime packs, narration voices, downloadable offline stories, unlimited child profiles, and personalised recommendations.
+            The Free Plan keeps things simple with 3 stories a week and 1 child profile. Premium is $9.99 and adds unlimited stories, bedtime packs, narration voices, saved library tools, unlimited child profiles, and personalised recommendations.
           </p>
         </div>
       </section>

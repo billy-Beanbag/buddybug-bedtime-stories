@@ -8,8 +8,8 @@ interface OfflineUnavailableStateProps {
 }
 
 export function OfflineUnavailableState({
-  title = "This story is not available offline yet",
-  description = "Open and save the story for offline use while you are online, then it will be ready on this device later.",
+  title = "This story is not available right now",
+  description = "Reconnect to Buddybug to open this story, or visit your saved library when you are back online.",
 }: OfflineUnavailableStateProps) {
   return (
     <section className="space-y-3 rounded-[2rem] border border-dashed border-slate-300 bg-white/80 p-6 text-center shadow-sm">

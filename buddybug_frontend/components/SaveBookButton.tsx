@@ -2,19 +2,14 @@
 
 import { useEffect, useState } from "react";
 
-import { useConnectivity } from "@/context/ConnectivityContext";
-import { removeLibraryItem, saveBook, updateLibraryItem } from "@/lib/library";
-import { queueSyncAction } from "@/lib/offline-sync";
-import { removeOfflineBookPackage } from "@/lib/offline-storage";
+import { removeLibraryItem, saveBook } from "@/lib/library";
 import type { UserLibraryItemRead } from "@/lib/types";
 
 interface SaveBookButtonProps {
   bookId: number;
   token: string | null;
   childProfileId?: number | null;
-  language?: string;
   initialItem?: UserLibraryItemRead | null;
-  canSaveOffline?: boolean;
   onChanged?: (item: UserLibraryItemRead | null) => void;
 }
 
@@ -22,12 +17,9 @@ export function SaveBookButton({
   bookId,
   token,
   childProfileId,
-  language,
   initialItem = null,
-  canSaveOffline = false,
   onChanged,
 }: SaveBookButtonProps) {
-  const { isOnline } = useConnectivity();
   const [item, setItem] = useState<UserLibraryItemRead | null>(initialItem);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,52 +44,11 @@ export function SaveBookButton({
         await removeLibraryItem(bookId, { token, childProfileId });
         applyNextItem(null);
       } else {
-        const saved = await saveBook(bookId, { token, childProfileId, savedForOffline: item?.saved_for_offline ?? false });
+        const saved = await saveBook(bookId, { token, childProfileId, savedForOffline: false });
         applyNextItem(saved);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to update saved state");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleOfflineToggle() {
-    if (!token || !item) {
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      const nextSavedForOffline = !item.saved_for_offline;
-      if (!isOnline) {
-        const optimisticItem = {
-          ...item,
-          saved_for_offline: nextSavedForOffline,
-          updated_at: new Date().toISOString(),
-        };
-        applyNextItem(optimisticItem);
-        if (!nextSavedForOffline && language) {
-          await removeOfflineBookPackage(bookId, language).catch(() => undefined);
-        }
-        await queueSyncAction("library_offline_state", {
-          book_id: bookId,
-          child_profile_id: childProfileId ?? null,
-          saved_for_offline: nextSavedForOffline,
-        });
-        return;
-      }
-      const updated = await updateLibraryItem(
-        bookId,
-        { saved_for_offline: nextSavedForOffline },
-        { token, childProfileId },
-      );
-      if (!nextSavedForOffline && language) {
-        await removeOfflineBookPackage(bookId, language).catch(() => undefined);
-      }
-      applyNextItem(updated);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to update offline state");
     } finally {
       setLoading(false);
     }
@@ -111,7 +62,7 @@ export function SaveBookButton({
 
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
           onClick={handleSaveToggle}
@@ -122,16 +73,9 @@ export function SaveBookButton({
         >
           {loading ? "Saving..." : isSaved ? "Saved" : "Save"}
         </button>
-        {isSaved && canSaveOffline ? (
-          <button
-            type="button"
-            onClick={handleOfflineToggle}
-            disabled={loading}
-            className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 disabled:opacity-60"
-          >
-            {item?.saved_for_offline ? "Offline marked" : "Save for offline"}
-          </button>
-        ) : null}
+        <p className="text-sm text-slate-600">
+          {isSaved ? "Saved in your Buddybug library." : "Save this story to your Buddybug library."}
+        </p>
       </div>
       {error ? <p className="text-sm text-rose-600">{error}</p> : null}
     </div>

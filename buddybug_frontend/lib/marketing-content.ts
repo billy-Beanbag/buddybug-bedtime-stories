@@ -73,7 +73,7 @@ export const featureCards: MarketingFeature[] = [
   {
     icon: "Offline",
     title: "Saved library",
-    description: "Save stories for later and keep family favorites ready for repeat reads and offline-friendly moments.",
+    description: "Save stories for later and keep family favorites organized inside your Buddybug account for quick repeat reads.",
   },
   {
     icon: "Globe",
@@ -140,7 +140,7 @@ export const pricingTiers: MarketingPricingTier[] = [
       "Full library access",
       "Bedtime packs",
       "Narration voices",
-      "Downloadable offline stories",
+      "Saved library tools",
       "Unlimited child profiles",
       "Personalised recommendations",
     ],
@@ -182,7 +182,7 @@ export const faqItems: MarketingFaqItem[] = [
   },
   {
     question: "Can I save stories for later?",
-    answer: "Yes. Families can save stories and keep favorites organized for quick access. Downloadable offline stories are available on Premium.",
+    answer: "Yes. Families can save stories and keep favorites organized in their Buddybug library for quick access later.",
   },
   {
     question: "Is there a free plan?",

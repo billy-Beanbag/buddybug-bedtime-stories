@@ -482,7 +482,7 @@ export default function ProfilePage() {
         <div>
           <h2 className="text-2xl font-semibold text-white">Settings & Controls</h2>
           <p className="mt-1 text-sm text-indigo-100">
-            Family controls, privacy, notifications, downloads, and app details now live in one settings hub for a cleaner mobile app structure.
+            Family controls, privacy, notifications, saved stories, and app details now live in one settings hub for a cleaner mobile app structure.
           </p>
         </div>
         {privacyPreference ? (

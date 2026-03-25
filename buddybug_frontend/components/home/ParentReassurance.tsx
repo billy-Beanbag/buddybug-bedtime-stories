@@ -10,8 +10,8 @@ const reassuranceItems = [
     description: "The experience avoids noisy rewards and pressure, keeping the focus on comfort and connection.",
   },
   {
-    title: "Narration and offline-ready reading",
-    description: "Families can read aloud themselves, use narration, and keep stories close for bedtime routines.",
+    title: "Narration and saved favourites",
+    description: "Families can read aloud themselves, use narration, and keep favourite stories easy to find for bedtime routines.",
   },
   {
     title: "Privacy and parental controls",

@@ -93,7 +93,7 @@ export function PricingPageContent() {
         <h2 className="text-2xl font-semibold text-slate-900">What Premium unlocks</h2>
         <p className="mt-3 text-base leading-7 text-slate-600">
           Premium is designed for families who want Buddybug to become part of a real routine: unlimited stories, full
-          library access, bedtime packs, narration voices, downloadable offline stories, unlimited child profiles, and more
+          library access, bedtime packs, narration voices, saved library tools, unlimited child profiles, and more
           personalised recommendations.
         </p>
       </section>

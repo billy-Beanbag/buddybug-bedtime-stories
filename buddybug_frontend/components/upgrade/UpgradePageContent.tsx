@@ -68,7 +68,7 @@ export function UpgradePageContent() {
           <h2 className="mt-3 text-3xl font-semibold">You already have full Buddybug access</h2>
           <p className="mt-3 text-sm leading-6 text-indigo-50">
             Premium is active on your account, so you already have unlimited stories, full library access, bedtime packs,
-            narration voices, downloadable offline stories, unlimited child profiles, and personalised recommendations.
+            narration voices, saved library tools, unlimited child profiles, and personalised recommendations.
           </p>
         </section>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -111,7 +111,7 @@ export function UpgradePageContent() {
           </div>
           <div className="rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-950">
             <span className="font-medium">Premium:</span> Unlimited stories, full library access, bedtime packs, narration
-            voices, downloadable offline stories, unlimited child profiles, and personalised recommendations.
+            voices, saved library tools, unlimited child profiles, and personalised recommendations.
           </div>
         </div>
       </section>
@@ -124,7 +124,7 @@ export function UpgradePageContent() {
             "Full library access",
             "Bedtime packs",
             "Narration voices",
-            "Downloadable offline stories",
+            "Saved library tools",
             "Unlimited child profiles",
             "Personalised recommendations",
           ].map((feature) => (

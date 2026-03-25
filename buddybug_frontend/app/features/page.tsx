@@ -7,7 +7,7 @@ import { featureCards } from "@/lib/marketing-content";
 
 export const metadata: Metadata = {
   title: "Buddybug Features | Narrated Stories, Child Profiles, and Bedtime Tools",
-  description: "Explore illustrated stories, narrated playback, child profiles, parental controls, offline-ready saves, and more.",
+  description: "Explore illustrated stories, narrated playback, child profiles, parental controls, saved-library tools, and more.",
   openGraph: {
     title: "Buddybug Features",
     description: "Illustrated bedtime stories, narrated playback, family profiles, and safer discovery tools in one app.",
@@ -43,7 +43,7 @@ export default function FeaturesPage() {
         <div className="rounded-3xl border border-white/70 bg-white/80 p-6 shadow-sm">
           <h2 className="text-xl font-semibold text-slate-900">Premium-ready value</h2>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            Narration, downloadable offline stories, saved library tools, premium voices, and family personalization give subscribers a clear reason to upgrade.
+            Narration, saved library tools, premium voices, and family personalization give subscribers a clear reason to upgrade.
           </p>
         </div>
         <div className="rounded-3xl border border-white/70 bg-white/80 p-6 shadow-sm">
