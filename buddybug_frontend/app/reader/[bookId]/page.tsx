@@ -178,6 +178,8 @@ function ReaderPageContent() {
   const lastViewedPreviewPageNumberRef = useRef(0);
   const pageRefs = useRef<Array<HTMLDivElement | null>>([]);
   const pendingScrollRef = useRef<{ index: number; behavior: ScrollBehavior } | null>(null);
+  const lastHeaderScrollYRef = useRef(0);
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
 
   const narratedStoriesEnabled = isEnabled("narrated_stories_enabled");
   const offlineDownloadsEnabled = isEnabled("offline_downloads_enabled");
@@ -723,6 +725,45 @@ function ReaderPageContent() {
   }, [visiblePages]);
 
   useEffect(() => {
+    lastHeaderScrollYRef.current = typeof window !== "undefined" ? window.scrollY : 0;
+    setIsHeaderVisible(true);
+
+    let frameId = 0;
+
+    const updateHeaderVisibility = () => {
+      frameId = 0;
+      const currentScrollY = window.scrollY;
+      const previousScrollY = lastHeaderScrollYRef.current;
+      const delta = currentScrollY - previousScrollY;
+
+      if (currentScrollY <= 24) {
+        setIsHeaderVisible(true);
+      } else if (delta > 10) {
+        setIsHeaderVisible(false);
+      } else if (delta < -8) {
+        setIsHeaderVisible(true);
+      }
+
+      lastHeaderScrollYRef.current = currentScrollY;
+    };
+
+    const scheduleHeaderVisibility = () => {
+      if (frameId) {
+        return;
+      }
+      frameId = window.requestAnimationFrame(updateHeaderVisibility);
+    };
+
+    window.addEventListener("scroll", scheduleHeaderVisibility, { passive: true });
+    return () => {
+      if (frameId) {
+        window.cancelAnimationFrame(frameId);
+      }
+      window.removeEventListener("scroll", scheduleHeaderVisibility);
+    };
+  }, [bookId, previewRefreshKey]);
+
+  useEffect(() => {
     if (!readAlongDetail || readAlongDetail.session.book_id === bookId) {
       return;
     }
@@ -1196,11 +1237,15 @@ function ReaderPageContent() {
   return (
     <div className="space-y-4">
       <section className="space-y-4">
-        <header className="sticky top-2 z-20 rounded-[2rem] border border-white/70 bg-white/88 p-4 shadow-sm backdrop-blur">
+        <header
+          className={`sticky top-2 z-20 rounded-[1.75rem] border border-white/70 bg-white/88 px-4 py-3 shadow-sm backdrop-blur transition duration-200 ${
+            isHeaderVisible ? "translate-y-0 opacity-100" : "-translate-y-[calc(100%+0.75rem)] opacity-0"
+          }`}
+        >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <Link
               href={isPreviewMode ? "/admin/workflow" : "/library"}
-              className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 shadow-sm"
+              className="inline-flex min-h-10 items-center justify-center rounded-2xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-900 shadow-sm"
             >
               {isPreviewMode ? "Back to workflow" : t("backToLibrary")}
             </Link>
@@ -1211,8 +1256,8 @@ function ReaderPageContent() {
 
           <div className="mt-3 min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{t("readerLabel")}</p>
-            <h2 className="mt-1 text-xl font-semibold text-slate-900 sm:text-2xl">{book.title}</h2>
-            <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-sm">
+            <h2 className="mt-1 text-lg font-semibold text-slate-900 sm:text-xl">{book.title}</h2>
+            <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[13px] sm:text-sm">
               {readerAccess ? (
                 <span className="text-slate-600">
                   {usingOfflinePackage
@@ -1230,7 +1275,7 @@ function ReaderPageContent() {
             </div>
           </div>
 
-          <div className="mt-3 flex flex-wrap items-center gap-2">
+          <div className="mt-2.5 flex flex-wrap items-center gap-2">
             <BedtimeModeBadge active={Boolean(resolvedControls?.bedtime_mode_enabled)} />
             <OfflineBookBadge
               availableOffline={Boolean(offlinePackage)}
@@ -1239,7 +1284,7 @@ function ReaderPageContent() {
             />
           </div>
 
-          <div className="mt-3">
+          <div className="mt-2.5">
             <ReaderProgressBar currentPageNumber={currentPage.page_number} totalPageNumber={lastPageNumber} />
           </div>
         </header>
