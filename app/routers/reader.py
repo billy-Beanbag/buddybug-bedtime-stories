@@ -61,6 +61,7 @@ def _resolve_controls(session: Session, *, current_user: User | None, child_prof
 @router.get("/books", response_model=list[ReaderBookSummary], summary="List published books for reading")
 def list_reader_books(
     age_band: str | None = Query(default=None),
+    content_lane_key: str | None = Query(default=None),
     language: str | None = Query(default=None),
     child_profile_id: int | None = Query(default=None),
     limit: int = Query(default=100, ge=1, le=300),
@@ -79,7 +80,13 @@ def list_reader_books(
         current_user=current_user,
         child_profile_id=child_profile.id if child_profile is not None else None,
     )
-    books = get_published_books(session, age_band=effective_age_band, language=None, limit=limit)
+    books = get_published_books(
+        session,
+        age_band=effective_age_band,
+        content_lane_key=content_lane_key,
+        language=None,
+        limit=limit,
+    )
     pre_filter_count = len(books)
     books = filter_books_by_parental_controls(books, controls=controls)
     if controls is not None and len(books) != pre_filter_count:

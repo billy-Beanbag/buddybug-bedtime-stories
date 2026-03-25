@@ -929,9 +929,9 @@ function AdminWorkflowPageContent() {
                         disabled={Boolean(busyKey?.startsWith(`idea-${record.idea.id}`))}
                         onClick={() => void handleIdeaAction(record.idea!.id, "select", ADVENTURE_LANE)}
                         className="rounded-2xl bg-amber-50 px-4 py-2 text-sm font-medium text-amber-800 disabled:opacity-60"
-                        title="Select as Adventure story (richer plots, 8–12)"
+                        title="Select as Adventure story (playful, plot-led, 3-7)"
                       >
-                        Select as Adventure
+                        Select as Adventure 3-7
                       </button>
                       <button
                         type="button"

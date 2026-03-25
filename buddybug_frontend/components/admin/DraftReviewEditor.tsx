@@ -240,8 +240,8 @@ export function DraftReviewEditor({
                 onChange={(e) => setContentLaneKey(e.target.value)}
                 className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
               >
-                <option value="bedtime_3_7">Bedtime</option>
-                <option value="story_adventures_8_12">Adventure</option>
+                <option value="bedtime_3_7">Bedtime 3-7</option>
+                <option value="story_adventures_8_12">Adventure 3-7</option>
               </select>
             </label>
             <span className="rounded-full bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700">

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { BookCard } from "@/components/BookCard";
 import { BedtimeModeBadge } from "@/components/BedtimeModeBadge";
@@ -32,6 +32,34 @@ import type {
   UserLibraryItemRead,
 } from "@/lib/types";
 
+const BEDTIME_LANE = "bedtime_3_7";
+const ADVENTURE_LANE = "story_adventures_8_12";
+const LIBRARY_ROUTE_STORAGE_KEY = "buddybug.library-route";
+
+type LibraryRouteFilter = "all" | typeof BEDTIME_LANE | typeof ADVENTURE_LANE;
+
+function readStoredLibraryRoute(): LibraryRouteFilter {
+  if (typeof window === "undefined") {
+    return "all";
+  }
+  const stored = window.localStorage.getItem(LIBRARY_ROUTE_STORAGE_KEY);
+  if (stored === BEDTIME_LANE || stored === ADVENTURE_LANE || stored === "all") {
+    return stored;
+  }
+  return "all";
+}
+
+function persistLibraryRoute(route: LibraryRouteFilter) {
+  if (typeof window === "undefined") {
+    return;
+  }
+  window.localStorage.setItem(LIBRARY_ROUTE_STORAGE_KEY, route);
+}
+
+function matchesRoute(route: LibraryRouteFilter, laneKey: string | null | undefined) {
+  return route === "all" || laneKey === route;
+}
+
 export default function LibraryPage() {
   const { hasPremiumAccess, isAuthenticated, token, user } = useAuth();
   const { selectedChildProfile, isLoading: childProfilesLoading } = useChildProfiles();
@@ -43,6 +71,7 @@ export default function LibraryPage() {
   const [savedItemsByBookId, setSavedItemsByBookId] = useState<Record<number, UserLibraryItemRead>>({});
   const [offlinePackagesByBookId, setOfflinePackagesByBookId] = useState<Record<number, OfflineBookPackageRecord>>({});
   const [selectedAgeBand, setSelectedAgeBand] = useState<"all" | "3-7" | "8-12">("all");
+  const [selectedRoute, setSelectedRoute] = useState<LibraryRouteFilter>("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,6 +86,21 @@ export default function LibraryPage() {
       : ageBand812Enabled
         ? (["all", "3-7", "8-12"] as const)
         : (["all", "3-7"] as const);
+  const routeFilteredRecommended = useMemo(
+    () => recommended.filter((item) => matchesRoute(selectedRoute, item.content_lane_key)),
+    [recommended, selectedRoute],
+  );
+  const bedtimeModeBlocksAdventure = Boolean(
+    selectedRoute === ADVENTURE_LANE && resolvedControls?.bedtime_mode_enabled,
+  );
+
+  useEffect(() => {
+    setSelectedRoute(readStoredLibraryRoute());
+  }, []);
+
+  useEffect(() => {
+    persistLibraryRoute(selectedRoute);
+  }, [selectedRoute]);
 
   useEffect(() => {
     void trackLibraryViewed({
@@ -123,6 +167,8 @@ export default function LibraryPage() {
       if (isAuthenticated && (childProfilesLoading || parentalControlsLoading)) {
         return;
       }
+      setLoading(true);
+      setError(null);
       try {
         const childProfileIdForRequest = isAuthenticated && token ? selectedChildProfile?.id : undefined;
         const [data, recommendations] = await Promise.all([
@@ -131,6 +177,7 @@ export default function LibraryPage() {
             query: {
               language: effectiveLanguage,
               age_band: effectiveAgeBand,
+              content_lane_key: selectedRoute === "all" ? undefined : selectedRoute,
               // Backend requires auth when `child_profile_id` is provided.
               child_profile_id: childProfileIdForRequest,
             },
@@ -179,6 +226,7 @@ export default function LibraryPage() {
     effectiveLanguage,
     isAuthenticated,
     parentalControlsLoading,
+    selectedRoute,
     selectedChildProfile?.id,
     token,
   ]);
@@ -207,37 +255,43 @@ export default function LibraryPage() {
     return <EmptyState title="Unable to load library" description={error} />;
   }
 
-  if (!books.length) {
-    return (
-      <EmptyState
-        title="No published books yet"
-        description={
-          selectedAgeBand === "all"
-            ? selectedChildProfile
-              ? resolvedControls?.bedtime_mode_enabled
-                ? `No published stories are currently visible for ${selectedChildProfile.display_name}. Bedtime mode or parental controls may be hiding adventure stories.`
-                : `No published stories are available yet for ${selectedChildProfile.display_name}.`
-              : "Once books are published from the backend workflow, they will appear here."
-            : `No published ${selectedAgeBand} stories are available yet.`
-        }
-      />
-    );
-  }
+  const emptyStateTitle = bedtimeModeBlocksAdventure
+    ? "Adventure stories are hidden right now"
+    : "No published books yet";
+  const emptyStateDescription = bedtimeModeBlocksAdventure
+    ? selectedChildProfile
+      ? `Adventure stories for ${selectedChildProfile.display_name} are currently hidden because Bedtime mode is on. Switch to Bedtime or All stories, or turn Bedtime mode off when you want a more energetic read.`
+      : "Adventure stories are currently hidden because Bedtime mode is on. Switch to Bedtime or All stories, or turn Bedtime mode off when you want a more energetic read."
+    : selectedRoute === BEDTIME_LANE
+      ? "No bedtime stories are published yet for this view."
+      : selectedRoute === ADVENTURE_LANE
+        ? "No adventure stories are published yet for this view."
+        : selectedAgeBand === "all"
+          ? selectedChildProfile
+            ? resolvedControls?.bedtime_mode_enabled
+              ? `No published stories are currently visible for ${selectedChildProfile.display_name}. Bedtime mode or parental controls may be hiding adventure stories.`
+              : `No published stories are available yet for ${selectedChildProfile.display_name}.`
+            : "Once books are published from the backend workflow, they will appear here."
+          : `No published ${selectedAgeBand} stories are available yet.`;
 
   return (
     <div className="space-y-4">
-      {recommended.length ? (
+      {routeFilteredRecommended.length ? (
         <section className="space-y-3">
           <div>
             <h2 className="text-2xl font-semibold text-slate-900">
-              {isAuthenticated ? "Start here" : "Tonight's pick"}
+              {selectedRoute === ADVENTURE_LANE ? "Adventure pick" : isAuthenticated ? "Start here" : "Tonight's pick"}
             </h2>
             <p className="mt-1 text-sm text-slate-600">
-              {isAuthenticated ? "One simple recommendation to get bedtime started." : "A gentle place to begin tonight."}
+              {selectedRoute === ADVENTURE_LANE
+                ? "A story with a little more energy for today's reading session."
+                : isAuthenticated
+                  ? "One simple recommendation to get bedtime started."
+                  : "A gentle place to begin tonight."}
             </p>
           </div>
           <div className="grid gap-3">
-            {recommended.map((item) => (
+            {routeFilteredRecommended.map((item) => (
               <RecommendedBookCard
                 key={`recommended-${item.book_id}`}
                 item={item}
@@ -269,6 +323,38 @@ export default function LibraryPage() {
         <div className="mt-2 flex flex-wrap gap-2">
           <BedtimeModeBadge active={Boolean(resolvedControls?.bedtime_mode_enabled)} />
         </div>
+        <div className="mt-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Choose your story route</p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-3">
+            {[
+              { key: "all" as const, label: "All stories", description: "Show every published 3-7 story in this view." },
+              { key: BEDTIME_LANE as const, label: "Bedtime stories", description: "Calm, cosy stories for winding down." },
+              { key: ADVENTURE_LANE as const, label: "Adventure stories", description: "Playful, plot-led stories with more energy." },
+            ].map((route) => (
+              <button
+                key={route.key}
+                type="button"
+                onClick={() => setSelectedRoute(route.key)}
+                className={`rounded-2xl border px-4 py-3 text-left transition ${
+                  selectedRoute === route.key
+                    ? "border-slate-900 bg-slate-900 text-white"
+                    : "border-slate-200 bg-slate-50 text-slate-900 hover:bg-slate-100"
+                }`}
+              >
+                <div className="text-sm font-semibold">{route.label}</div>
+                <div className={`mt-1 text-xs ${selectedRoute === route.key ? "text-slate-200" : "text-slate-600"}`}>
+                  {route.description}
+                </div>
+              </button>
+            ))}
+          </div>
+          {bedtimeModeBlocksAdventure ? (
+            <p className="mt-3 text-sm text-amber-700">
+              Bedtime mode is currently hiding adventure stories. Switch to Bedtime or All stories, or turn Bedtime mode
+              off when you want a more energetic read.
+            </p>
+          ) : null}
+        </div>
         {selectedChildProfile ? (
           <p className="mt-3 inline-flex rounded-full border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-900">
             For {selectedChildProfile.display_name} • {selectedChildProfile.age_band} •{" "}
@@ -294,49 +380,53 @@ export default function LibraryPage() {
         )}
       </div>
 
-      <div className="grid gap-4">
-        {books.map((book) => (
-          <div key={book.book_id} className="space-y-3">
-            <BookCard
-              book={book}
-              subtitle={
-                hasPremiumAccess
-                  ? `${book.page_count} pages • ${book.language.toUpperCase()} • ${t("fullAccess")}`
-                  : `${book.page_count} pages • ${book.language.toUpperCase()} • ${t("previewAvailable")}`
-              }
-              statusLabel={hasPremiumAccess ? t("premium") : t("preview")}
-            />
-            <div className="flex items-center justify-between gap-3 rounded-3xl border border-white/10 bg-[linear-gradient(135deg,#111827_0%,#1e1b4b_42%,#312e81_74%,#4338ca_100%)] px-4 py-3 text-white shadow-[0_20px_50px_rgba(30,41,59,0.16)]">
-              <div className="flex flex-wrap gap-2">
-                <OfflineBookBadge
-                  availableOffline={Boolean(offlinePackagesByBookId[book.book_id])}
-                  savedForOffline={Boolean(savedItemsByBookId[book.book_id]?.saved_for_offline)}
-                  downloadedAt={savedItemsByBookId[book.book_id]?.downloaded_at}
+      {!books.length ? (
+        <EmptyState title={emptyStateTitle} description={emptyStateDescription} />
+      ) : (
+        <div className="grid gap-4">
+          {books.map((book) => (
+            <div key={book.book_id} className="space-y-3">
+              <BookCard
+                book={book}
+                subtitle={
+                  hasPremiumAccess
+                    ? `${book.page_count} pages • ${book.language.toUpperCase()} • ${t("fullAccess")}`
+                    : `${book.page_count} pages • ${book.language.toUpperCase()} • ${t("previewAvailable")}`
+                }
+                statusLabel={hasPremiumAccess ? t("premium") : t("preview")}
+              />
+              <div className="flex items-center justify-between gap-3 rounded-3xl border border-white/10 bg-[linear-gradient(135deg,#111827_0%,#1e1b4b_42%,#312e81_74%,#4338ca_100%)] px-4 py-3 text-white shadow-[0_20px_50px_rgba(30,41,59,0.16)]">
+                <div className="flex flex-wrap gap-2">
+                  <OfflineBookBadge
+                    availableOffline={Boolean(offlinePackagesByBookId[book.book_id])}
+                    savedForOffline={Boolean(savedItemsByBookId[book.book_id]?.saved_for_offline)}
+                    downloadedAt={savedItemsByBookId[book.book_id]?.downloaded_at}
+                  />
+                </div>
+                <SaveBookButton
+                  bookId={book.book_id}
+                  token={token}
+                  childProfileId={selectedChildProfile?.id}
+                  language={book.language}
+                  initialItem={savedItemsByBookId[book.book_id] ?? null}
+                  canSaveOffline={hasPremiumAccess && offlineDownloadsEnabled}
+                  onChanged={(item) =>
+                    setSavedItemsByBookId((current) => {
+                      const next = { ...current };
+                      if (item) {
+                        next[book.book_id] = item;
+                      } else {
+                        delete next[book.book_id];
+                      }
+                      return next;
+                    })
+                  }
                 />
               </div>
-              <SaveBookButton
-                bookId={book.book_id}
-                token={token}
-                childProfileId={selectedChildProfile?.id}
-                language={book.language}
-                initialItem={savedItemsByBookId[book.book_id] ?? null}
-                canSaveOffline={hasPremiumAccess && offlineDownloadsEnabled}
-                onChanged={(item) =>
-                  setSavedItemsByBookId((current) => {
-                    const next = { ...current };
-                    if (item) {
-                      next[book.book_id] = item;
-                    } else {
-                      delete next[book.book_id];
-                    }
-                    return next;
-                  })
-                }
-              />
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -44,8 +44,8 @@ export default function AdminIdeasPage() {
         "/story-ideas/generate",
         {
           count: 5,
-          // Must match ContentLane.age_band in the API. Both canonical lanes use 3–7 today; adventure is still
-          // story_adventures_8_12 (lane key) with age_band 3–7 in seed until 8–12 is enabled server-side.
+          // Both current story routes are 3-7. The adventure lane keeps its legacy key for now,
+          // but the generated stories are still intentionally targeted at 3-7 readers.
           age_band: "3-7",
           content_lane_key: generateRoute,
           bedtime_only: generateRoute === BEDTIME_LANE,
@@ -134,7 +134,7 @@ export default function AdminIdeasPage() {
                   generateRoute === BEDTIME_LANE ? "bg-indigo-100 text-indigo-900" : "bg-slate-100 text-slate-600"
                 }`}
               >
-                Bedtime
+                Bedtime 3-7
               </button>
               <button
                 type="button"
@@ -143,7 +143,7 @@ export default function AdminIdeasPage() {
                   generateRoute === ADVENTURE_LANE ? "bg-amber-100 text-amber-900" : "bg-slate-100 text-slate-600"
                 }`}
               >
-                Adventure
+                Adventure 3-7
               </button>
             </div>
           </div>

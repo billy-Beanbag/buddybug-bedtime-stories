@@ -29,12 +29,15 @@ def get_published_books(
     session: Session,
     *,
     age_band: str | None,
+    content_lane_key: str | None,
     language: str | None,
     limit: int,
 ) -> list[Book]:
     statement = _published_book_statement().order_by(Book.updated_at.desc()).limit(limit)
     if age_band:
         statement = statement.where(Book.age_band == age_band)
+    if content_lane_key:
+        statement = statement.where(Book.content_lane_key == content_lane_key)
     if language:
         statement = statement.where(Book.language == language)
     return list(session.exec(statement).all())
