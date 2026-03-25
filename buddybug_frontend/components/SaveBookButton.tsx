@@ -68,7 +68,9 @@ export function SaveBookButton({
           onClick={handleSaveToggle}
           disabled={loading}
           className={`rounded-2xl px-4 py-2 text-sm font-medium disabled:opacity-60 ${
-            isSaved ? "border border-slate-200 bg-white text-slate-900" : "bg-slate-900 text-white"
+            isSaved
+              ? "border border-slate-200 bg-white text-slate-900"
+              : "bg-[linear-gradient(135deg,#4338ca_0%,#5b21b6_100%)] text-white shadow-[0_12px_30px_rgba(79,70,229,0.22)]"
           }`}
         >
           {loading ? "Saving..." : isSaved ? "Saved" : "Save"}

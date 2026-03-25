@@ -1330,7 +1330,7 @@ function ReaderPageContent() {
               </Link>
               <Link
                 href="/register"
-                className="min-h-12 rounded-2xl bg-slate-900 px-4 py-3 text-center font-medium text-white"
+                className="min-h-12 rounded-2xl bg-[linear-gradient(135deg,#4338ca_0%,#5b21b6_100%)] px-4 py-3 text-center font-medium text-white shadow-[0_16px_36px_rgba(79,70,229,0.18)]"
               >
                 Create account
               </Link>
@@ -1384,7 +1384,7 @@ function ReaderPageContent() {
                 void handleUpgradeToPremium();
               }}
               disabled={upgradeLoading}
-              className="w-full rounded-2xl bg-slate-900 px-4 py-3 font-medium text-white disabled:opacity-60"
+              className="w-full rounded-2xl bg-[linear-gradient(135deg,#4338ca_0%,#5b21b6_100%)] px-4 py-3 font-medium text-white shadow-[0_16px_36px_rgba(79,70,229,0.18)] disabled:opacity-60"
             >
               {upgradeLoading ? t("openingCheckout") : previewWallCopy?.primary_cta_label || t("upgradeToPremium")}
             </button>
@@ -1403,7 +1403,7 @@ function ReaderPageContent() {
                     target: "/login",
                   });
                 }}
-                className="rounded-2xl bg-slate-900 px-4 py-3 text-center font-medium text-white"
+                className="rounded-2xl bg-[linear-gradient(135deg,#4338ca_0%,#5b21b6_100%)] px-4 py-3 text-center font-medium text-white shadow-[0_16px_36px_rgba(79,70,229,0.18)]"
               >
                 {previewWallCopy?.guest_primary_label || t("loginToUpgrade")}
               </Link>
@@ -1465,7 +1465,7 @@ function ReaderPageContent() {
           </p>
           <Link
             href={`/reader/${activeBedtimePackContext.nextItem.book_id}`}
-            className="inline-flex rounded-2xl bg-slate-900 px-4 py-3 text-sm font-medium text-white"
+            className="inline-flex rounded-2xl bg-[linear-gradient(135deg,#4338ca_0%,#5b21b6_100%)] px-4 py-3 text-sm font-medium text-white shadow-[0_16px_36px_rgba(79,70,229,0.18)]"
           >
             Open next story
           </Link>
