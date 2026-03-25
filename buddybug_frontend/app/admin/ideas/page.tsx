@@ -30,7 +30,7 @@ export default function AdminIdeasPage() {
   const [status, setStatus] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const BEDTIME_LANE = "bedtime_3_7";
-  const ADVENTURE_LANE = "story_adventures_8_12";
+  const ADVENTURE_LANE = "story_adventures_3_7";
   const [generateRoute, setGenerateRoute] = useState(BEDTIME_LANE);
   const [generating, setGenerating] = useState(false);
 

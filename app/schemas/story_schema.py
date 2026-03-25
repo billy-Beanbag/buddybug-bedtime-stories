@@ -88,7 +88,7 @@ class StoryIdeaSelectRequest(SQLModel):
 
     content_lane_key: str | None = Field(
         default=None,
-        description="Bedtime (bedtime_3_7) or Adventure (story_adventures_8_12). Assigns labels and age band.",
+        description="Bedtime (bedtime_3_7) or Adventure (story_adventures_3_7). Assigns labels and age band.",
     )
 
 

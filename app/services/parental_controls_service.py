@@ -7,6 +7,7 @@ from sqlmodel import Session, select
 
 from app.models import Book, ChildControlOverride, ChildProfile, NarrationVoice, ParentalControlSettings, User
 from app.services.child_profile_service import validate_child_profile_ownership
+from app.services.content_lane_service import is_adventure_lane_key
 from app.services.review_service import utc_now
 
 SUPPORTED_PARENTAL_AGE_BANDS = {"3-7", "8-12"}
@@ -158,7 +159,7 @@ def is_age_band_allowed(*, requested_age_band: str, controls: ResolvedParentalCo
 def is_book_allowed(book: Book, *, controls: ResolvedParentalControls) -> bool:
     if not is_age_band_allowed(requested_age_band=book.age_band, controls=controls):
         return False
-    if controls.bedtime_mode_enabled and controls.hide_adventure_content_at_bedtime and book.content_lane_key == "story_adventures_8_12":
+    if controls.bedtime_mode_enabled and controls.hide_adventure_content_at_bedtime and is_adventure_lane_key(book.content_lane_key):
         return False
     return True
 
@@ -183,7 +184,7 @@ def filter_recommendation_like_items_by_parental_controls(items: list, *, contro
         and not (
             controls.bedtime_mode_enabled
             and controls.hide_adventure_content_at_bedtime
-            and getattr(item, "content_lane_key", None) == "story_adventures_8_12"
+            and is_adventure_lane_key(getattr(item, "content_lane_key", None))
         )
     ]
     if controls.bedtime_mode_enabled:

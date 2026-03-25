@@ -459,7 +459,7 @@ function AdminWorkflowPageContent() {
   }, [workflowRecords, draftIdFilter, ideaIdFilter, bookIdFilter, query, view]);
 
   const BEDTIME_LANE = "bedtime_3_7";
-  const ADVENTURE_LANE = "story_adventures_8_12";
+  const ADVENTURE_LANE = "story_adventures_3_7";
 
   async function handleIdeaAction(
     ideaId: number,

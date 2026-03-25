@@ -2,7 +2,11 @@ from fastapi import HTTPException, status
 from sqlmodel import Session, select
 
 from app.models import ContentLane
-from app.utils.seed_content_lanes import BEDTIME_3_7_LANE_KEY, STORY_ADVENTURES_8_12_LANE_KEY
+from app.utils.seed_content_lanes import (
+    BEDTIME_3_7_LANE_KEY,
+    LEGACY_STORY_ADVENTURES_8_12_LANE_KEY,
+    STORY_ADVENTURES_3_7_LANE_KEY,
+)
 
 SUPPORTED_AGE_BANDS = ["3-7", "8-12"]
 
@@ -13,8 +17,21 @@ def get_active_lanes(session: Session) -> list[ContentLane]:
     )
 
 
+def normalize_content_lane_key(content_lane_key: str | None) -> str | None:
+    if content_lane_key == LEGACY_STORY_ADVENTURES_8_12_LANE_KEY:
+        return STORY_ADVENTURES_3_7_LANE_KEY
+    return content_lane_key
+
+
+def is_adventure_lane_key(content_lane_key: str | None) -> bool:
+    return normalize_content_lane_key(content_lane_key) == STORY_ADVENTURES_3_7_LANE_KEY
+
+
 def get_lane_by_key(session: Session, key: str) -> ContentLane | None:
-    return session.exec(select(ContentLane).where(ContentLane.key == key)).first()
+    normalized_key = normalize_content_lane_key(key)
+    if normalized_key is None:
+        return None
+    return session.exec(select(ContentLane).where(ContentLane.key == normalized_key)).first()
 
 
 def get_active_lane_by_key(session: Session, key: str) -> ContentLane:
@@ -25,17 +42,18 @@ def get_active_lane_by_key(session: Session, key: str) -> ContentLane:
 
 
 def resolve_content_lane_key(age_band: str | None, content_lane_key: str | None) -> str:
-    if content_lane_key:
-        return content_lane_key
+    normalized_key = normalize_content_lane_key(content_lane_key)
+    if normalized_key:
+        return normalized_key
     if age_band == "8-12":
-        return STORY_ADVENTURES_8_12_LANE_KEY
+        return STORY_ADVENTURES_3_7_LANE_KEY
     return BEDTIME_3_7_LANE_KEY
 
 
 def validate_content_lane_key(session: Session, *, age_band: str | None, content_lane_key: str | None) -> ContentLane:
     resolved_key = resolve_content_lane_key(age_band, content_lane_key)
     lane = get_active_lane_by_key(session, resolved_key)
-    if age_band and lane.age_band != age_band:
+    if age_band and lane.age_band != age_band and not (resolved_key == STORY_ADVENTURES_3_7_LANE_KEY and age_band == "8-12"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="content_lane_key does not match the requested age_band",

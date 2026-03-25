@@ -1,6 +1,7 @@
 from sqlmodel import Session, select
 
 from app.models import BookCollection
+from app.utils.seed_content_lanes import STORY_ADVENTURES_3_7_LANE_KEY
 
 
 CANONICAL_COLLECTIONS: list[dict[str, str | bool | None]] = [
@@ -30,17 +31,17 @@ CANONICAL_COLLECTIONS: list[dict[str, str | bool | None]] = [
         "description": "Adventure-forward stories from the Storylight world.",
         "language": "en",
         "age_band": "3-7",
-        "content_lane_key": "story_adventures_8_12",
+        "content_lane_key": STORY_ADVENTURES_3_7_LANE_KEY,
         "is_public": True,
         "is_featured": True,
     },
     {
         "key": "adventures_8_12",
         "title": "Story Adventures",
-        "description": "Adventure stories for ages 3-7. (8-12 route to be phased in later.)",
+        "description": "Adventure stories for ages 3-7.",
         "language": "en",
         "age_band": "3-7",
-        "content_lane_key": "story_adventures_8_12",
+        "content_lane_key": STORY_ADVENTURES_3_7_LANE_KEY,
         "is_public": True,
         "is_featured": True,
     },

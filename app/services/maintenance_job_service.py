@@ -181,7 +181,7 @@ def _infer_content_lane_key(age_band: str | None) -> str | None:
     if age_band == "3-7":
         return "bedtime_3_7"
     if age_band == "8-12":
-        return "story_adventures_8_12"
+        return "story_adventures_3_7"
     return None
 
 

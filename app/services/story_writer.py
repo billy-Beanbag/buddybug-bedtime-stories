@@ -715,7 +715,7 @@ def generate_story_draft_payload(idea: StoryIdea, *, session: Session | None = N
         style_reference_titles=[example.title for example in style_examples],
         style_reference_examples=[example.text for example in style_examples],
     )
-    lane_key = idea.content_lane_key or ("story_adventures_8_12" if idea.age_band == "8-12" else "bedtime_3_7")
+    lane_key = idea.content_lane_key or ("story_adventures_3_7" if idea.age_band == "8-12" else "bedtime_3_7")
     live_generation_requested = bool(STORY_GENERATION_API_KEY.strip() and STORY_GENERATION_MODEL.strip())
     legacy_generated_story = _build_first_pass_story(outline=outline, metadata=metadata)
     legacy_generated_story = _expand_to_target_length(
