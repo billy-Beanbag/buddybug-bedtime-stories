@@ -12,7 +12,6 @@ import { OfflineBookBadge } from "@/components/OfflineBookBadge";
 import { OfflineUnavailableState } from "@/components/OfflineUnavailableState";
 import { PreviewIllustrationReviewPanel } from "@/components/admin/PreviewIllustrationReviewPanel";
 import { RecommendedBookCard } from "@/components/RecommendedBookCard";
-import { ReaderControls } from "@/components/ReaderControls";
 import { ReaderPageView } from "@/components/ReaderPageView";
 import { ReaderProgressBar } from "@/components/ReaderProgressBar";
 import { SaveBookButton } from "@/components/SaveBookButton";
@@ -177,6 +176,8 @@ function ReaderPageContent() {
   const bedtimePackOpenedRef = useRef<number | null>(null);
   const bedtimePackCompletedRef = useRef<number | null>(null);
   const lastViewedPreviewPageNumberRef = useRef(0);
+  const pageRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const pendingScrollRef = useRef<{ index: number; behavior: ScrollBehavior } | null>(null);
 
   const narratedStoriesEnabled = isEnabled("narrated_stories_enabled");
   const offlineDownloadsEnabled = isEnabled("offline_downloads_enabled");
@@ -342,7 +343,11 @@ function ReaderPageContent() {
             const matchedIndex = bookDetail.pages.findIndex(
               (page) => page.page_number === progress.current_page_number,
             );
-            setCurrentIndex(matchedIndex >= 0 ? matchedIndex : 0);
+            const nextIndex = matchedIndex >= 0 ? matchedIndex : 0;
+            setCurrentIndex(nextIndex);
+            if (nextIndex > 0) {
+              pendingScrollRef.current = { index: nextIndex, behavior: "auto" };
+            }
           } catch (err) {
             if (!(err instanceof ApiError) || err.status !== 404) {
               throw err;
@@ -354,7 +359,11 @@ function ReaderPageContent() {
           setSavedProgress(null);
           const previousPreviewPageNumber = lastViewedPreviewPageNumberRef.current;
           const matchedIndex = bookDetail.pages.findIndex((page) => page.page_number === previousPreviewPageNumber);
-          setCurrentIndex(matchedIndex >= 0 ? matchedIndex : 0);
+          const nextIndex = matchedIndex >= 0 ? matchedIndex : 0;
+          setCurrentIndex(nextIndex);
+          if (nextIndex > 0) {
+            pendingScrollRef.current = { index: nextIndex, behavior: "auto" };
+          }
         }
         if (!isPreviewMode && isAuthenticated && authToken) {
           const [savedLibrary, accessResponse] = await Promise.all([
@@ -587,19 +596,28 @@ function ReaderPageContent() {
       });
   }, [isAuthenticated, isOnline, selectedChildProfile?.id, token]);
 
-  const currentPage = useMemo(() => {
-    if (!book) {
-      return null;
-    }
-    return book.pages[currentIndex] ?? null;
-  }, [book, currentIndex]);
-
-  const lastPageNumber = book?.pages[book.pages.length - 1]?.page_number ?? 0;
-  const isLastPage = currentPage ? currentPage.page_number >= lastPageNumber : false;
-  const activeReadAlongDetail = readAlongDetail?.session.book_id === bookId ? readAlongDetail : null;
   const canReadFullBook = Boolean(readerAccess?.can_read_full_book);
   const previewLimit = readerAccess?.preview_page_limit ?? 2;
-  const completed = Boolean(savedProgress?.completed || (canReadFullBook && isLastPage));
+  const visiblePages = useMemo(() => {
+    if (!book) {
+      return [];
+    }
+    if (canReadFullBook || isPreviewMode || usingOfflinePackage) {
+      return book.pages;
+    }
+    return book.pages.filter((page) => page.page_number <= previewLimit);
+  }, [book, canReadFullBook, isPreviewMode, previewLimit, usingOfflinePackage]);
+  const currentPage = useMemo(() => {
+    if (!visiblePages.length) {
+      return null;
+    }
+    return visiblePages[currentIndex] ?? null;
+  }, [currentIndex, visiblePages]);
+  const lastPageNumber = book?.pages[book.pages.length - 1]?.page_number ?? 0;
+  const isAtStoryEnd = currentPage ? currentPage.page_number >= lastPageNumber : false;
+  const isAtVisibleEnd = visiblePages.length > 0 ? currentIndex >= visiblePages.length - 1 : false;
+  const activeReadAlongDetail = readAlongDetail?.session.book_id === bookId ? readAlongDetail : null;
+  const completed = Boolean(savedProgress?.completed || (canReadFullBook && isAtStoryEnd));
   const activeBedtimePackContext = useMemo(() => {
     if (!bedtimePackDetail) {
       return null;
@@ -618,10 +636,91 @@ function ReaderPageContent() {
   const showPreviewUpsell = Boolean(
     readerAccess &&
       !readerAccess.can_read_full_book &&
-      isLastPage &&
+      isAtVisibleEnd &&
       currentPage &&
       currentPage.page_number >= previewLimit,
   );
+
+  function scrollToPageIndex(index: number, behavior: ScrollBehavior = "smooth") {
+    if (!visiblePages.length) {
+      return;
+    }
+    const clampedIndex = Math.max(0, Math.min(index, visiblePages.length - 1));
+    setCurrentIndex(clampedIndex);
+    const targetNode = pageRefs.current[clampedIndex];
+    if (targetNode) {
+      targetNode.scrollIntoView({ behavior, block: "start" });
+      return;
+    }
+    pendingScrollRef.current = { index: clampedIndex, behavior };
+  }
+
+  useEffect(() => {
+    if (!visiblePages.length) {
+      return;
+    }
+    setCurrentIndex((existingIndex) => Math.min(existingIndex, visiblePages.length - 1));
+  }, [visiblePages.length]);
+
+  useEffect(() => {
+    if (!visiblePages.length || !pendingScrollRef.current) {
+      return;
+    }
+    const { index, behavior } = pendingScrollRef.current;
+    const targetNode = pageRefs.current[index];
+    if (!targetNode) {
+      return;
+    }
+    targetNode.scrollIntoView({ behavior, block: "start" });
+    pendingScrollRef.current = null;
+  }, [currentIndex, visiblePages.length]);
+
+  useEffect(() => {
+    if (!visiblePages.length) {
+      return;
+    }
+    let frameId = 0;
+
+    const updateCurrentPageFromViewport = () => {
+      frameId = 0;
+      const anchor = Math.max(140, window.innerHeight * 0.28);
+      let bestIndex = 0;
+      let bestDistance = Number.POSITIVE_INFINITY;
+
+      for (let index = 0; index < visiblePages.length; index += 1) {
+        const node = pageRefs.current[index];
+        if (!node) {
+          continue;
+        }
+        const rect = node.getBoundingClientRect();
+        const distance = Math.abs(rect.top - anchor);
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          bestIndex = index;
+        }
+      }
+
+      setCurrentIndex((existingIndex) => (existingIndex === bestIndex ? existingIndex : bestIndex));
+    };
+
+    const scheduleViewportSync = () => {
+      if (frameId) {
+        return;
+      }
+      frameId = window.requestAnimationFrame(updateCurrentPageFromViewport);
+    };
+
+    scheduleViewportSync();
+    window.addEventListener("scroll", scheduleViewportSync, { passive: true });
+    window.addEventListener("resize", scheduleViewportSync);
+    return () => {
+      if (frameId) {
+        window.cancelAnimationFrame(frameId);
+      }
+      window.removeEventListener("scroll", scheduleViewportSync);
+      window.removeEventListener("resize", scheduleViewportSync);
+    };
+  }, [visiblePages]);
 
   useEffect(() => {
     if (!readAlongDetail || readAlongDetail.session.book_id === bookId) {
@@ -640,7 +739,7 @@ function ReaderPageContent() {
       (page) => page.page_number === activeReadAlongDetail.session.current_page_number,
     );
     if (matchedIndex >= 0) {
-      setCurrentIndex((existingIndex) => (existingIndex === matchedIndex ? existingIndex : matchedIndex));
+      scrollToPageIndex(matchedIndex);
     }
     lastReadAlongSyncRef.current = `${activeReadAlongDetail.session.current_page_number}:${activeReadAlongDetail.session.playback_state}`;
   }, [
@@ -742,7 +841,7 @@ function ReaderPageContent() {
   ]);
 
   useEffect(() => {
-    if (!book || !canReadFullBook || !isLastPage || completionTracked) {
+    if (!book || !canReadFullBook || !isAtStoryEnd || completionTracked) {
       return;
     }
     void trackBookCompleted(book.book_id, {
@@ -753,7 +852,7 @@ function ReaderPageContent() {
       source: "reader_final_page",
     });
     setCompletionTracked(true);
-  }, [book, canReadFullBook, completionTracked, effectiveLanguage, isAuthenticated, isLastPage, selectedChildProfile?.id, token, user]);
+  }, [book, canReadFullBook, completionTracked, effectiveLanguage, isAtStoryEnd, isAuthenticated, selectedChildProfile?.id, token, user]);
 
   useEffect(() => {
     if (!moreLikeThis.length) {
@@ -1096,25 +1195,37 @@ function ReaderPageContent() {
 
   return (
     <div className="space-y-4">
-      <section className="grid gap-4 md:min-h-[calc(100vh-2rem)] md:grid-rows-[auto_minmax(0,1fr)_auto]">
-        <header className="rounded-[2rem] border border-white/70 bg-white/88 p-4 shadow-sm">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{t("readerLabel")}</p>
-              <h2 className="mt-1 text-xl font-semibold text-slate-900 sm:text-2xl">{book.title}</h2>
+      <section className="space-y-4">
+        <header className="sticky top-2 z-20 rounded-[2rem] border border-white/70 bg-white/88 p-4 shadow-sm backdrop-blur">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <Link
+              href={isPreviewMode ? "/admin/workflow" : "/library"}
+              className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 shadow-sm"
+            >
+              {isPreviewMode ? "Back to workflow" : t("backToLibrary")}
+            </Link>
+            <p className="text-sm font-medium text-slate-600">
+              {currentPage.page_number} / {lastPageNumber}
+            </p>
+          </div>
+
+          <div className="mt-3 min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{t("readerLabel")}</p>
+            <h2 className="mt-1 text-xl font-semibold text-slate-900 sm:text-2xl">{book.title}</h2>
+            <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-sm">
               {readerAccess ? (
-                <p className="mt-1 text-sm text-slate-600">
+                <span className="text-slate-600">
                   {usingOfflinePackage
                     ? "Reading from your offline copy on this device."
                     : readerAccess.can_read_full_book
                       ? t("premiumAccessUnlocked")
                       : t("freePreviewMessage")}
-                </p>
+                </span>
               ) : null}
               {selectedChildProfile ? (
-                <p className="mt-1 text-sm text-indigo-700">
+                <span className="text-indigo-700">
                   Reading for {selectedChildProfile.display_name} in {selectedChildProfile.language.toUpperCase()}
-                </p>
+                </span>
               ) : null}
             </div>
           </div>
@@ -1133,39 +1244,38 @@ function ReaderPageContent() {
           </div>
         </header>
 
-        <ReaderPageView book={book} page={currentPage} />
-
-        {isPreviewMode && isEditor && currentPage.page_number > 0 ? (
-          <PreviewIllustrationReviewPanel
-            page={currentPage}
-            pageIndex={currentIndex}
-            bookId={book.book_id}
-            storyDraftId={book.story_draft_id ?? null}
-            pageMapping={book.page_mapping ?? null}
-            token={token}
-            onPreviewUpdated={async () => {
-              setPreviewRefreshKey((current) => current + 1);
-            }}
-          />
-        ) : null}
-
-        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_220px] sm:items-start">
-          <ReaderControls
-            currentPageNumber={currentPage.page_number}
-            totalPageNumber={lastPageNumber}
-            canGoPrevious={currentIndex > 0}
-            canGoNext={currentIndex < book.pages.length - 1}
-            isLastPage={isLastPage}
-            onPrevious={() => setCurrentIndex((index) => Math.max(index - 1, 0))}
-            onNext={() => setCurrentIndex((index) => Math.min(index + 1, book.pages.length - 1))}
-            onMarkFinished={canReadFullBook ? handleMarkFinished : undefined}
-          />
-          <Link
-            href={isPreviewMode ? "/admin/workflow" : "/library"}
-            className="inline-flex min-h-12 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-center font-medium text-slate-900 shadow-sm"
-          >
-            {isPreviewMode ? "Back to workflow" : t("backToLibrary")}
-          </Link>
+        <div className="space-y-6">
+          {visiblePages.map((page, index) => (
+            <div
+              key={`reader-page-${page.page_number}-${previewRefreshKey}`}
+              ref={(node) => {
+                pageRefs.current[index] = node;
+              }}
+              className="scroll-mt-32 space-y-3"
+            >
+              <div className="px-1">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  {page.page_number === 0 ? "Cover" : `Page ${page.page_number} of ${lastPageNumber}`}
+                </p>
+              </div>
+              <div className={index === currentIndex ? "rounded-[2.25rem] ring-2 ring-indigo-200/80 ring-offset-2 ring-offset-transparent" : ""}>
+                <ReaderPageView book={book} page={page} />
+              </div>
+              {isPreviewMode && isEditor && index === currentIndex && page.page_number > 0 ? (
+                <PreviewIllustrationReviewPanel
+                  page={page}
+                  pageIndex={index}
+                  bookId={book.book_id}
+                  storyDraftId={book.story_draft_id ?? null}
+                  pageMapping={book.page_mapping ?? null}
+                  token={token}
+                  onPreviewUpdated={async () => {
+                    setPreviewRefreshKey((current) => current + 1);
+                  }}
+                />
+              ) : null}
+            </div>
+          ))}
         </div>
       </section>
 
@@ -1177,9 +1287,9 @@ function ReaderPageContent() {
             voices={availableVoices}
             currentPageNumber={currentPage.page_number}
             onPageChange={(pageNumber) => {
-              const matchedIndex = book.pages.findIndex((page) => page.page_number === pageNumber);
+              const matchedIndex = visiblePages.findIndex((page) => page.page_number === pageNumber);
               if (matchedIndex >= 0) {
-                setCurrentIndex(matchedIndex);
+                scrollToPageIndex(matchedIndex);
               }
             }}
             onVoiceChange={(voiceKey) => {
@@ -1358,7 +1468,7 @@ function ReaderPageContent() {
         </section>
       ) : null}
 
-      {(isLastPage || completed) && canReadFullBook && (
+      {(isAtStoryEnd || completed) && canReadFullBook && (
         <StoryFeedbackForm
           bookId={book.book_id}
           token={isAuthenticated ? token : null}
@@ -1368,7 +1478,7 @@ function ReaderPageContent() {
         />
       )}
 
-      {(isLastPage || completed) && moreLikeThis.length ? (
+      {(isAtStoryEnd || completed) && moreLikeThis.length ? (
         <section className="space-y-3">
           <h3 className="text-xl font-semibold text-slate-900">{t("moreLikeThis")}</h3>
           <div className="grid gap-3">
@@ -1386,7 +1496,7 @@ function ReaderPageContent() {
         </section>
       ) : null}
 
-      {(isLastPage || completed) && activeBedtimePackContext?.nextItem ? (
+      {(isAtStoryEnd || completed) && activeBedtimePackContext?.nextItem ? (
         <section className="space-y-3 rounded-[2rem] border border-white/70 bg-white/85 p-5 shadow-sm">
           <h3 className="text-xl font-semibold text-slate-900">Next in tonight's pack</h3>
           <p className="text-sm text-slate-600">
