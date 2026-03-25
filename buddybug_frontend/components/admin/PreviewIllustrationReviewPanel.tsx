@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { apiGet, apiPost } from "@/lib/api";
+import { apiGet, apiPatch, apiPost } from "@/lib/api";
 import { ADMIN_PRIMARY_BUTTON, ADMIN_SECONDARY_BUTTON } from "@/lib/admin-styles";
 import type { AdminIllustrationSummary, EditorialStoryPageRead, ReaderPageRead } from "@/lib/types";
 
@@ -182,6 +182,14 @@ export function PreviewIllustrationReviewPanel({
   const [illustrations, setIllustrations] = useState<AdminIllustrationSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [busyAction, setBusyAction] = useState<"approve" | "reject" | "reject-regenerate" | "generate" | null>(null);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [savingEdits, setSavingEdits] = useState(false);
+  const [pageTextDraft, setPageTextDraft] = useState("");
+  const [sceneSummaryDraft, setSceneSummaryDraft] = useState("");
+  const [locationDraft, setLocationDraft] = useState("");
+  const [moodDraft, setMoodDraft] = useState("");
+  const [charactersDraft, setCharactersDraft] = useState("");
+  const [illustrationPromptDraft, setIllustrationPromptDraft] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState("");
@@ -226,6 +234,41 @@ export function PreviewIllustrationReviewPanel({
     }
     await apiPost(`/editorial/story-drafts/${storyPage.story_draft_id}/build-preview`, undefined, { token, timeoutMs: 60_000 });
     await Promise.all([loadReviewState(), onPreviewUpdated()]);
+  }
+
+  async function handleSavePageEdits() {
+    if (!token || !storyPage) {
+      return;
+    }
+    setSavingEdits(true);
+    setMessage(null);
+    setError(null);
+    try {
+      const updatedPage = await apiPatch<EditorialStoryPageRead>(
+        `/story-pages/${storyPage.id}`,
+        {
+          page_text: pageTextDraft,
+          scene_summary: sceneSummaryDraft,
+          location: locationDraft,
+          mood: moodDraft,
+          characters_present: charactersDraft,
+          illustration_prompt: illustrationPromptDraft,
+        },
+        { token, timeoutMs: 30_000 },
+      );
+      setStoryPage(updatedPage);
+      await apiPost(`/editorial/story-drafts/${updatedPage.story_draft_id}/build-preview`, undefined, {
+        token,
+        timeoutMs: 60_000,
+      });
+      await Promise.all([loadReviewState(), onPreviewUpdated()]);
+      setShowEditForm(false);
+      setMessage("Page edits saved and preview rebuilt. The current image has been kept.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to save page edits");
+    } finally {
+      setSavingEdits(false);
+    }
   }
 
   async function handleApprove() {
@@ -304,6 +347,7 @@ export function PreviewIllustrationReviewPanel({
 
   useEffect(() => {
     setShowRejectForm(false);
+    setShowEditForm(false);
     setMessage(null);
     setError(null);
     setFeedback("");
@@ -312,6 +356,15 @@ export function PreviewIllustrationReviewPanel({
     setIllustrations([]);
     void loadReviewState();
   }, [storyPageId, token]);
+
+  useEffect(() => {
+    setPageTextDraft(storyPage?.page_text || "");
+    setSceneSummaryDraft(storyPage?.scene_summary || "");
+    setLocationDraft(storyPage?.location || "");
+    setMoodDraft(storyPage?.mood || "");
+    setCharactersDraft(storyPage?.characters_present || "");
+    setIllustrationPromptDraft(storyPage?.illustration_prompt || "");
+  }, [storyPage]);
 
   if (resolvingFallback) {
     return (
@@ -368,6 +421,14 @@ export function PreviewIllustrationReviewPanel({
             className={`rounded-2xl px-4 py-2 text-sm font-medium ${ADMIN_SECONDARY_BUTTON} disabled:opacity-60`}
           >
             {latestIllustration ? "Reject..." : "Generate image"}
+          </button>
+          <button
+            type="button"
+            disabled={busyAction !== null || savingEdits || !storyPage}
+            onClick={() => setShowEditForm((current) => !current)}
+            className={`rounded-2xl px-4 py-2 text-sm font-medium ${ADMIN_SECONDARY_BUTTON} disabled:opacity-60`}
+          >
+            {showEditForm ? "Close text edit" : "Edit page text"}
           </button>
         </div>
       </div>
@@ -436,6 +497,100 @@ export function PreviewIllustrationReviewPanel({
               type="button"
               disabled={busyAction !== null}
               onClick={() => setShowRejectForm(false)}
+              className={`rounded-2xl px-4 py-2 text-sm font-medium ${ADMIN_SECONDARY_BUTTON} disabled:opacity-60`}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {showEditForm && storyPage ? (
+        <div className="mt-4 rounded-3xl border border-indigo-200 bg-white/90 p-4">
+          <p className="text-sm font-semibold text-slate-900">Edit this page without regenerating the whole book</p>
+          <p className="mt-1 text-sm text-slate-600">
+            Save page text and prompt changes, rebuild the preview immediately, and keep the current image unless you
+            choose to reject it afterwards.
+          </p>
+
+          <label className="mt-3 block">
+            <span className="mb-2 block text-sm font-medium text-slate-700">Page text</span>
+            <textarea
+              value={pageTextDraft}
+              onChange={(event) => setPageTextDraft(event.target.value)}
+              rows={7}
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm leading-6 text-slate-900 outline-none"
+            />
+          </label>
+
+          <label className="mt-3 block">
+            <span className="mb-2 block text-sm font-medium text-slate-700">Scene summary</span>
+            <textarea
+              value={sceneSummaryDraft}
+              onChange={(event) => setSceneSummaryDraft(event.target.value)}
+              rows={3}
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none"
+            />
+          </label>
+
+          <div className="mt-3 grid gap-3 md:grid-cols-3">
+            <label className="block">
+              <span className="mb-2 block text-sm font-medium text-slate-700">Location</span>
+              <input
+                value={locationDraft}
+                onChange={(event) => setLocationDraft(event.target.value)}
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-2 block text-sm font-medium text-slate-700">Mood</span>
+              <input
+                value={moodDraft}
+                onChange={(event) => setMoodDraft(event.target.value)}
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-2 block text-sm font-medium text-slate-700">Characters present</span>
+              <input
+                value={charactersDraft}
+                onChange={(event) => setCharactersDraft(event.target.value)}
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none"
+              />
+            </label>
+          </div>
+
+          <label className="mt-3 block">
+            <span className="mb-2 block text-sm font-medium text-slate-700">Illustration prompt</span>
+            <textarea
+              value={illustrationPromptDraft}
+              onChange={(event) => setIllustrationPromptDraft(event.target.value)}
+              rows={8}
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm leading-6 text-slate-900 outline-none"
+            />
+          </label>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={savingEdits || busyAction !== null}
+              onClick={() => void handleSavePageEdits()}
+              className={`rounded-2xl px-4 py-2 text-sm font-medium ${ADMIN_PRIMARY_BUTTON} disabled:opacity-60`}
+            >
+              {savingEdits ? "Saving and rebuilding..." : "Save page edits and rebuild preview"}
+            </button>
+            <button
+              type="button"
+              disabled={savingEdits}
+              onClick={() => {
+                setPageTextDraft(storyPage.page_text || "");
+                setSceneSummaryDraft(storyPage.scene_summary || "");
+                setLocationDraft(storyPage.location || "");
+                setMoodDraft(storyPage.mood || "");
+                setCharactersDraft(storyPage.characters_present || "");
+                setIllustrationPromptDraft(storyPage.illustration_prompt || "");
+                setShowEditForm(false);
+              }}
               className={`rounded-2xl px-4 py-2 text-sm font-medium ${ADMIN_SECONDARY_BUTTON} disabled:opacity-60`}
             >
               Cancel
