@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { EmptyState } from "@/components/EmptyState";
 import { LoadingState } from "@/components/LoadingState";
 import { useAuth } from "@/context/AuthContext";
-import { apiGet, apiPatch } from "@/lib/api";
+import { apiDelete, apiGet, apiPatch } from "@/lib/api";
 import { ADMIN_PRIMARY_BUTTON, ADMIN_SECONDARY_BUTTON } from "@/lib/admin-styles";
 import type { StorySuggestionAdminListResponse, StorySuggestionAdminRead } from "@/lib/types";
 
@@ -66,6 +66,29 @@ export default function AdminStorySuggestionsPage() {
       setMessage(`Suggestion ${suggestionId} updated.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to update story suggestion");
+    } finally {
+      setSavingId(null);
+    }
+  }
+
+  async function handleDelete(suggestion: StorySuggestionAdminRead) {
+    if (!token) {
+      return;
+    }
+    const label = suggestion.title || `Suggestion ${suggestion.id}`;
+    const confirmed = window.confirm(`Delete "${label}" permanently? This cannot be undone.`);
+    if (!confirmed) {
+      return;
+    }
+    setSavingId(suggestion.id);
+    setError(null);
+    setMessage(null);
+    try {
+      await apiDelete(`/admin/story-suggestions/${suggestion.id}`, { token });
+      setItems((current) => current.filter((item) => item.id !== suggestion.id));
+      setMessage(`Deleted ${label}.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to delete story suggestion");
     } finally {
       setSavingId(null);
     }
@@ -206,6 +229,14 @@ export default function AdminStorySuggestionsPage() {
                     className={`rounded-2xl px-4 py-3 text-sm font-medium ${ADMIN_SECONDARY_BUTTON}`}
                   >
                     Archive
+                  </button>
+                  <button
+                    type="button"
+                    disabled={savingId === item.id}
+                    onClick={() => void handleDelete(item)}
+                    className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800 transition hover:bg-rose-100 disabled:opacity-60"
+                  >
+                    Delete permanently
                   </button>
                 </div>
               </div>

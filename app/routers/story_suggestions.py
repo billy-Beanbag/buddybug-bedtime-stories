@@ -191,3 +191,31 @@ def update_story_suggestion_for_admin(
         metadata=payload.model_dump(exclude_unset=True),
     )
     return _build_admin_read(session, suggestion)
+
+
+@admin_router.delete(
+    "/{suggestion_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete a story suggestion",
+)
+def delete_story_suggestion_for_admin(
+    suggestion_id: int,
+    request: Request,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_editor_user),
+):
+    suggestion = _get_story_suggestion_or_404(session, suggestion_id)
+    suggestion_title = suggestion.title
+    suggestion_user_id = suggestion.user_id
+    session.delete(suggestion)
+    session.commit()
+    create_audit_log(
+        session,
+        action_type="story_suggestion_deleted",
+        entity_type="story_suggestion",
+        entity_id=str(suggestion_id),
+        summary=f"Deleted story suggestion {suggestion_id}",
+        actor_user=current_user,
+        request_id=get_request_id_from_request(request),
+        metadata={"title": suggestion_title, "user_id": suggestion_user_id},
+    )
