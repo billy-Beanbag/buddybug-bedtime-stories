@@ -2,8 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useMemo } from "react";
 
 import { useAuth } from "@/context/AuthContext";
+import { useChildProfiles } from "@/context/ChildProfileContext";
 
 function PrimaryButton({ href, children }: { href: string; children: string }) {
   return (
@@ -29,10 +31,34 @@ function SecondaryButton({ href, children }: { href: string; children: string })
 
 export function HeroSection() {
   const { isAuthenticated, isLoading } = useAuth();
+  const { childProfiles, selectedChildProfile, isLoading: childProfilesLoading } = useChildProfiles();
 
   const startReadingHref = isAuthenticated ? "/library" : "/register";
   const bedtimePackHref = isAuthenticated ? "/bedtime-pack" : "/register";
   const primaryLabel = isLoading ? "Start Reading" : isAuthenticated ? "Open Library" : "Start Reading";
+  const heroChildProfile = selectedChildProfile || childProfiles[0] || null;
+  const currentYear = new Date().getFullYear();
+  const childAgeLabel = useMemo(() => {
+    if (!heroChildProfile?.birth_year) {
+      return heroChildProfile ? `ages ${heroChildProfile.age_band}` : null;
+    }
+    const computedAge = currentYear - heroChildProfile.birth_year;
+    return computedAge > 0 && computedAge < 18 ? `age ${computedAge}` : `ages ${heroChildProfile.age_band}`;
+  }, [currentYear, heroChildProfile]);
+  const childProfileHeading = childProfilesLoading
+    ? "Loading child profile"
+    : heroChildProfile
+      ? `${heroChildProfile.display_name}${childAgeLabel ? `, ${childAgeLabel}` : ""}`
+      : isAuthenticated
+        ? "Add your child's profile"
+        : "Personalised child profile";
+  const childProfileDescription = childProfilesLoading
+    ? "Bringing in the bedtime profile for this account."
+    : heroChildProfile
+      ? `Reading in ${heroChildProfile.language.toUpperCase()} with story suggestions shaped for ${heroChildProfile.display_name}.`
+      : isAuthenticated
+        ? "Add a child profile so Buddybug can tailor language, age range, and story suggestions to your family."
+        : "Sign in to see your child's live Buddybug profile, language, and age-based story setup here.";
 
   return (
     <section className="relative overflow-hidden rounded-[2.5rem] bg-[linear-gradient(135deg,#0f172a_0%,#1d2457_40%,#302a6f_72%,#47377a_100%)] px-6 py-8 text-white shadow-[0_24px_70px_rgba(30,41,59,0.28)] sm:px-8 md:px-10 md:py-10">
@@ -78,8 +104,8 @@ export function HeroSection() {
               </div>
               <div className="rounded-2xl bg-white/95 p-4 text-slate-900 shadow-sm">
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-indigo-600">Child Profile</p>
-                <p className="mt-2 text-lg font-semibold">Daphne, age 5</p>
-                <p className="mt-1 text-sm text-slate-600">Prefers narrated stories, gentle pacing, and cozy animal adventures.</p>
+                <p className="mt-2 text-lg font-semibold">{childProfileHeading}</p>
+                <p className="mt-1 text-sm text-slate-600">{childProfileDescription}</p>
               </div>
               <div className="rounded-2xl bg-white/12 p-4">
                 <div className="flex items-center justify-between gap-3">
