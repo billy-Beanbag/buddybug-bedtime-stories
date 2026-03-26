@@ -2015,6 +2015,7 @@ export interface AdminStoryIdeaSummary {
 export interface IdeaGenerationSummary {
   path: "llm" | "llm_plus_curated" | "curated" | string;
   excluded_recent_premise_count: number;
+  approved_story_suggestion_count: number;
   llm_idea_count: number;
   curated_idea_count: number;
 }
@@ -2049,6 +2050,21 @@ export interface StoryDraftReviewRead {
   content_lane_key?: string | null;
   read_time_minutes: number;
   generation_source: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StoryReviewQueueRead {
+  id: number;
+  story_id: number;
+  generated_story: string;
+  rewritten_story: string;
+  story_brief: string | null;
+  story_validation: string | null;
+  outline: string;
+  illustration_plan: string;
+  story_metadata: string | null;
+  status: string;
   created_at: string;
   updated_at: string;
 }

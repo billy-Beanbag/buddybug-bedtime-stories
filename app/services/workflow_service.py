@@ -275,15 +275,12 @@ def handle_generate_story_ideas(session: Session, payload: dict[str, Any]) -> di
         hint_lines.append(s[:240])
         if len(hint_lines) >= 35:
             break
-    suggestion_guidance = tuple(
-        build_story_suggestion_guidance_lines(
-            list_story_suggestion_references(
-                session,
-                age_band=lane.age_band,
-                limit=3,
-            )
-        )
+    suggestion_references = list_story_suggestion_references(
+        session,
+        age_band=lane.age_band,
+        limit=3,
     )
+    suggestion_guidance = tuple(build_story_suggestion_guidance_lines(suggestion_references))
     batch = generate_story_idea_payloads(
         count=payload.get("count", 5),
         age_band=lane.age_band,
@@ -303,7 +300,11 @@ def handle_generate_story_ideas(session: Session, payload: dict[str, Any]) -> di
         session.commit()
         session.refresh(story_idea)
         created_ids.append(story_idea.id)
-    return {"created_count": len(created_ids), "story_idea_ids": created_ids}
+    return {
+        "created_count": len(created_ids),
+        "story_idea_ids": created_ids,
+        "approved_story_suggestion_count": len(suggestion_references),
+    }
 
 
 def handle_generate_story_draft(session: Session, payload: dict[str, Any]) -> dict[str, Any]:

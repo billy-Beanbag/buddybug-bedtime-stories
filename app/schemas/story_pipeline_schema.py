@@ -48,6 +48,7 @@ class StoryBrief(BaseModel):
     supporting_characters: list[str] = Field(default_factory=list)
     series_key: str | None = None
     series_title: str | None = None
+    approved_story_suggestion_count: int = 0
     generation_rules: list[str] = Field(default_factory=list)
     editorial_guidance: list[str] = Field(default_factory=list)
     style_reference_titles: list[str] = Field(default_factory=list)

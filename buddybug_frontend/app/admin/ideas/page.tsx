@@ -19,7 +19,11 @@ function formatGenerationSummary(s: StoryIdeaBatchGenerateResponse["generation_s
         : s.path === "curated"
           ? "curated (LLM off, missing key, or model returned nothing usable)"
           : s.path;
-  return `Created ${s.llm_idea_count} LLM + ${s.curated_idea_count} curated (${pathLabel}). Excluded ${s.excluded_recent_premise_count} recent premises from prompts.`;
+  const suggestionLabel =
+    s.approved_story_suggestion_count > 0
+      ? ` Used ${s.approved_story_suggestion_count} approved story suggestion reference${s.approved_story_suggestion_count === 1 ? "" : "s"} as editorial guidance.`
+      : "";
+  return `Created ${s.llm_idea_count} LLM + ${s.curated_idea_count} curated (${pathLabel}). Excluded ${s.excluded_recent_premise_count} recent premises from prompts.${suggestionLabel}`;
 }
 
 export default function AdminIdeasPage() {

@@ -73,6 +73,11 @@ class IdeaGenerationSummary(SQLModel):
         ge=0,
         description="Size of premise exclusion set (recent DB premises + merged LLM rows when applicable).",
     )
+    approved_story_suggestion_count: int = Field(
+        default=0,
+        ge=0,
+        description="How many approved reusable parent suggestions were fed into the prompt as editorial guidance.",
+    )
     llm_idea_count: int = Field(ge=0)
     curated_idea_count: int = Field(ge=0)
 

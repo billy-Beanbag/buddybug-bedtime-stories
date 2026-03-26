@@ -707,17 +707,16 @@ def generate_story_draft_payload(idea: StoryIdea, *, session: Session | None = N
         if session is not None
         else []
     )
-    suggestion_guidance = (
-        build_story_suggestion_guidance_lines(
-            list_story_suggestion_references(
-                session,
-                age_band=idea.age_band,
-                limit=3,
-            )
+    suggestion_references = (
+        list_story_suggestion_references(
+            session,
+            age_band=idea.age_band,
+            limit=3,
         )
         if session is not None
         else []
     )
+    suggestion_guidance = build_story_suggestion_guidance_lines(suggestion_references)
     outline = build_story_outline(idea)
     illustration_scenes = build_illustration_scenes(idea, outline)
     metadata = build_story_metadata(
@@ -730,6 +729,7 @@ def generate_story_draft_payload(idea: StoryIdea, *, session: Session | None = N
         style_reference_titles=[example.title for example in style_examples],
         style_reference_examples=[example.text for example in style_examples],
         editorial_guidance=suggestion_guidance,
+        approved_story_suggestion_count=len(suggestion_references),
     )
     lane_key = idea.content_lane_key or ("story_adventures_3_7" if idea.age_band == "8-12" else "bedtime_3_7")
     live_generation_requested = bool(STORY_GENERATION_API_KEY.strip() and STORY_GENERATION_MODEL.strip())

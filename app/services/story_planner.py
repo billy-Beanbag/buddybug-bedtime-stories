@@ -551,6 +551,7 @@ def build_story_brief(
     style_reference_titles: list[str] | None = None,
     style_reference_examples: list[str] | None = None,
     editorial_guidance: list[str] | None = None,
+    approved_story_suggestion_count: int = 0,
 ) -> StoryBrief:
     """Build the durable narrative brief that future one-pass story generation will use."""
     metadata = build_story_metadata(
@@ -575,6 +576,7 @@ def build_story_brief(
         supporting_characters=metadata.supporting_characters,
         series_key=metadata.series_key,
         series_title=metadata.series_title,
+        approved_story_suggestion_count=approved_story_suggestion_count,
         generation_rules=[
             "write a real story, not a writing exercise",
             "keep setup, problem, reveal, and ending in a single coherent line of action",

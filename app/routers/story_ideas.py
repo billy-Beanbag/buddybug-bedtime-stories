@@ -87,15 +87,12 @@ def generate_story_ideas(
         hint_lines.append(s[:240])
         if len(hint_lines) >= 35:
             break
-    suggestion_guidance = tuple(
-        build_story_suggestion_guidance_lines(
-            list_story_suggestion_references(
-                session,
-                age_band=lane.age_band,
-                limit=3,
-            )
-        )
+    suggestion_references = list_story_suggestion_references(
+        session,
+        age_band=lane.age_band,
+        limit=3,
     )
+    suggestion_guidance = tuple(build_story_suggestion_guidance_lines(suggestion_references))
     batch = generate_story_idea_payloads(
         count=payload.count,
         age_band=lane.age_band,
@@ -125,6 +122,7 @@ def generate_story_ideas(
         generation_summary=IdeaGenerationSummary(
             path=batch.path,
             excluded_recent_premise_count=batch.excluded_premise_count,
+            approved_story_suggestion_count=len(suggestion_references),
             llm_idea_count=batch.llm_idea_count,
             curated_idea_count=batch.curated_idea_count,
         ),
