@@ -331,6 +331,26 @@ export default function LibraryPage() {
             </p>
           ) : null}
         </div>
+        {isAuthenticated ? (
+          <div className="mt-4 rounded-3xl border border-indigo-200 bg-[linear-gradient(135deg,rgba(238,242,255,0.96),rgba(245,243,255,0.96))] p-4 shadow-sm">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">New</p>
+                <h3 className="mt-1 text-lg font-semibold text-slate-900">Suggest a future story</h3>
+                <p className="mt-1 text-sm text-slate-600">
+                  Share a brief outline, lesson, or bedtime scenario you want Buddybug to learn from for future editorial
+                  guidance.
+                </p>
+              </div>
+              <Link
+                href="/story-suggestions"
+                className="rounded-2xl bg-[linear-gradient(135deg,#4338ca_0%,#5b21b6_100%)] px-4 py-3 text-sm font-medium text-white shadow-[0_16px_36px_rgba(79,70,229,0.18)]"
+              >
+                Open story suggestions
+              </Link>
+            </div>
+          </div>
+        ) : null}
         {selectedChildProfile ? (
           <p className="mt-3 inline-flex rounded-full border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-900">
             For {selectedChildProfile.display_name} • {selectedChildProfile.age_band} •{" "}

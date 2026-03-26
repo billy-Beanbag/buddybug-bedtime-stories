@@ -13,6 +13,7 @@ const primaryAdminLinks: AdminLink[] = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/workflow", label: "Workflow" },
   { href: "/admin/ideas", label: "Ideas" },
+  { href: "/admin/story-suggestions", label: "Suggestions" },
   { href: "/admin/drafts", label: "Drafts" },
   { href: "/admin/story-pages", label: "Story Pages" },
   { href: "/admin/books", label: "Books" },

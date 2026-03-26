@@ -78,6 +78,7 @@ from app.models.story_brief import StoryBrief
 from app.models.story_idea import StoryIdea
 from app.models.story_page import StoryPage
 from app.models.story_page_version import StoryPageVersion
+from app.models.story_suggestion import StorySuggestion
 from app.models.story_review_queue import StoryReviewQueue
 from app.models.story_style_training_data import StoryStyleTrainingData
 from app.models.story_quality_review import StoryQualityReview
@@ -176,6 +177,7 @@ __all__ = [
     "StoryDraftVersion",
     "StoryPage",
     "StoryPageVersion",
+    "StorySuggestion",
     "StoryReviewQueue",
     "StoryStyleTrainingData",
     "StoryQualityReview",

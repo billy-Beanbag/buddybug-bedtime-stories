@@ -26,6 +26,7 @@ def generate_story_idea_payloads(
     available_characters: list[str],
     exclude_premises: frozenset[str] | None = None,
     exclude_premise_hints: tuple[str, ...] | None = None,
+    editorial_guidance: tuple[str, ...] | None = None,
 ) -> IdeaGenerationResult:
     """Generate hook-first structured story ideas via the Buddybug pipeline."""
     return generate_structured_story_idea_payloads(
@@ -38,6 +39,7 @@ def generate_story_idea_payloads(
         available_characters=available_characters,
         exclude_premises=exclude_premises,
         exclude_premise_hints=exclude_premise_hints,
+        editorial_guidance=editorial_guidance,
     )
 
 

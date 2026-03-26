@@ -15,6 +15,7 @@ const ROOT_TITLES: Record<string, string> = {
   "/library": "Library",
   "/continue-reading": "Continue Reading",
   "/saved": "Saved Books",
+  "/story-suggestions": "Story Suggestions",
   "/profile": "Profile",
   "/settings": "Settings",
   "/support": "Support",

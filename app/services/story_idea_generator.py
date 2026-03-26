@@ -324,6 +324,7 @@ def generate_story_idea_payloads(
     available_characters: list[str],
     exclude_premises: frozenset[str] | None = None,
     exclude_premise_hints: tuple[str, ...] | None = None,
+    editorial_guidance: tuple[str, ...] | None = None,
 ) -> IdeaGenerationResult:
     """Generate short, hook-first Buddybug ideas for the structured story pipeline."""
     lane_key = resolve_content_lane_key(age_band, content_lane_key)
@@ -355,6 +356,7 @@ def generate_story_idea_payloads(
                 available_characters=available_characters,
                 exclude_premises_normalized=exclude_norm,
                 exclude_premise_hints=exclude_premise_hints,
+                editorial_guidance=editorial_guidance,
             )
             if llm_payloads is not None and len(llm_payloads) >= count:
                 pl = llm_payloads[:count]

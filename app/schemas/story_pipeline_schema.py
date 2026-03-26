@@ -49,6 +49,7 @@ class StoryBrief(BaseModel):
     series_key: str | None = None
     series_title: str | None = None
     generation_rules: list[str] = Field(default_factory=list)
+    editorial_guidance: list[str] = Field(default_factory=list)
     style_reference_titles: list[str] = Field(default_factory=list)
     style_reference_examples: list[str] = Field(default_factory=list)
     beat_card: StoryBeatCard

@@ -88,6 +88,7 @@ from app.routers.seasonal_campaigns import (
 from app.routers.story_drafts import router as story_drafts_router
 from app.routers.story_ideas import router as story_ideas_router
 from app.routers.story_pages import router as story_pages_router
+from app.routers.story_suggestions import admin_router as story_suggestions_admin_router, router as story_suggestions_router
 from app.routers.story_quality import admin_router as story_quality_admin_router, router as story_quality_router
 from app.routers.subscriptions import router as subscriptions_router
 from app.routers.support import admin_router as support_admin_router, router as support_router
@@ -250,6 +251,8 @@ app.include_router(story_ideas_router)
 app.include_router(story_drafts_router)
 app.include_router(reviews_router)
 app.include_router(story_pages_router)
+app.include_router(story_suggestions_router)
+app.include_router(story_suggestions_admin_router)
 app.include_router(story_quality_router)
 app.include_router(story_quality_admin_router)
 app.include_router(illustrations_router)

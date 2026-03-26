@@ -29,6 +29,10 @@ from app.services.story_quality_service import (
     detect_story_constraint_issues,
     detect_story_length_issues,
 )
+from app.services.story_suggestion_service import (
+    build_story_suggestion_guidance_lines,
+    list_story_suggestion_references,
+)
 from app.services.story_style_rewriter import rewrite_story_to_buddybug_style
 from app.services.style_engine import list_style_reference_examples
 from app.utils.seed_content_lanes import STORY_ADVENTURES_8_12_LANE_KEY
@@ -703,6 +707,17 @@ def generate_story_draft_payload(idea: StoryIdea, *, session: Session | None = N
         if session is not None
         else []
     )
+    suggestion_guidance = (
+        build_story_suggestion_guidance_lines(
+            list_story_suggestion_references(
+                session,
+                age_band=idea.age_band,
+                limit=3,
+            )
+        )
+        if session is not None
+        else []
+    )
     outline = build_story_outline(idea)
     illustration_scenes = build_illustration_scenes(idea, outline)
     metadata = build_story_metadata(
@@ -714,6 +729,7 @@ def generate_story_draft_payload(idea: StoryIdea, *, session: Session | None = N
         idea,
         style_reference_titles=[example.title for example in style_examples],
         style_reference_examples=[example.text for example in style_examples],
+        editorial_guidance=suggestion_guidance,
     )
     lane_key = idea.content_lane_key or ("story_adventures_3_7" if idea.age_band == "8-12" else "bedtime_3_7")
     live_generation_requested = bool(STORY_GENERATION_API_KEY.strip() and STORY_GENERATION_MODEL.strip())

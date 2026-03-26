@@ -24,6 +24,10 @@ from app.services.story_brief_service import upsert_story_brief_record
 from app.services.story_review_queue_service import upsert_story_review_queue_item
 from app.services.story_writer import generate_story_draft_payload
 from app.services.story_quality_service import evaluate_illustration_quality, evaluate_story_quality
+from app.services.story_suggestion_service import (
+    build_story_suggestion_guidance_lines,
+    list_story_suggestion_references,
+)
 
 WORKFLOW_JOB_STATUSES = {"queued", "running", "succeeded", "failed", "canceled"}
 WORKFLOW_JOB_TYPES = {
@@ -253,7 +257,34 @@ def handle_generate_story_ideas(session: Session, payload: dict[str, Any]) -> di
         content_lane_key=payload.get("content_lane_key"),
     )
     available_characters = _active_character_names(session)
-    generated_payloads = generate_story_idea_payloads(
+    recent_premises = session.exec(
+        select(StoryIdea.premise).order_by(StoryIdea.created_at.desc()).limit(120),
+    ).all()
+    seen_keys: set[str] = set()
+    exclude_set: set[str] = set()
+    hint_lines: list[str] = []
+    for p in recent_premises:
+        s = str(p).strip()
+        if not s:
+            continue
+        key = s.casefold()
+        if key in seen_keys:
+            continue
+        seen_keys.add(key)
+        exclude_set.add(key)
+        hint_lines.append(s[:240])
+        if len(hint_lines) >= 35:
+            break
+    suggestion_guidance = tuple(
+        build_story_suggestion_guidance_lines(
+            list_story_suggestion_references(
+                session,
+                age_band=lane.age_band,
+                limit=3,
+            )
+        )
+    )
+    batch = generate_story_idea_payloads(
         count=payload.get("count", 5),
         age_band=lane.age_band,
         content_lane_key=lane.key,
@@ -261,9 +292,12 @@ def handle_generate_story_ideas(session: Session, payload: dict[str, Any]) -> di
         include_characters=payload.get("include_characters"),
         bedtime_only=payload.get("bedtime_only", True),
         available_characters=available_characters,
+        exclude_premises=frozenset(exclude_set) if exclude_set else None,
+        exclude_premise_hints=tuple(hint_lines) if hint_lines else None,
+        editorial_guidance=suggestion_guidance or None,
     )
     created_ids: list[int] = []
-    for item in generated_payloads:
+    for item in batch.payloads:
         story_idea = StoryIdea(**item)
         session.add(story_idea)
         session.commit()
@@ -358,8 +392,8 @@ def handle_generate_illustration_plan(session: Session, payload: dict[str, Any])
         story_draft=story_draft,
         story_idea=session.get(StoryIdea, story_draft.story_idea_id) if story_draft.story_idea_id is not None else None,
         target_page_count=None,
-        min_pages=int(payload.get("min_pages", 8)),
-        max_pages=int(payload.get("max_pages", 14)),
+        min_pages=int(payload.get("min_pages", 5)),
+        max_pages=int(payload.get("max_pages", 6)),
     )
     created_page_ids: list[int] = []
     for item in page_payloads:
@@ -547,8 +581,8 @@ def handle_full_story_pipeline(session: Session, payload: dict[str, Any]) -> dic
         session,
         {
             "story_draft_id": approved_draft.id,
-            "min_pages": 8,
-            "max_pages": 14,
+            "min_pages": 5,
+            "max_pages": 6,
             "_workflow_job_id": payload.get("_workflow_job_id"),
         },
     )

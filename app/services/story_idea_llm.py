@@ -71,6 +71,7 @@ def _build_user_prompt(
     available_characters: list[str],
     batch_nonce: str,
     exclude_premise_lines: list[str],
+    editorial_guidance_lines: list[str],
 ) -> str:
     allowed_hooks = BEDTIME_ALLOWED_HOOK_KEYS if mode == BEDTIME_MODE else STANDARD_ALLOWED_HOOK_KEYS
     mode_label = "plot-led bedtime (cozy and sleepy by the ending, but lively and engaging on the way)" if mode == BEDTIME_MODE else (
@@ -121,6 +122,17 @@ def _build_user_prompt(
         )
         for ex in exclude_premise_lines:
             lines.append(f"- {ex}")
+    if editorial_guidance_lines:
+        lines.append("")
+        lines.append("Approved parent suggestion guidance to learn from when inventing fresh ideas:")
+        for line in editorial_guidance_lines[:12]:
+            lines.append(f"- {line}")
+        lines.extend(
+            [
+                "- Use this guidance as inspiration for tone, emotional payoff, and preferred story shape.",
+                "- Do not copy these suggestions verbatim; transform them into fresh, distinct new premises.",
+            ]
+        )
     lines.extend(
         [
             "",
@@ -143,6 +155,7 @@ def try_generate_llm_idea_payloads(
     available_characters: list[str],
     exclude_premises_normalized: set[str] | None = None,
     exclude_premise_hints: tuple[str, ...] | None = None,
+    editorial_guidance: tuple[str, ...] | None = None,
 ) -> list[dict[str, Any]] | None:
     """Call chat completions; return normalized payloads or None to trigger curated fallback."""
     if not STORY_GENERATION_API_KEY.strip() or not STORY_GENERATION_MODEL.strip():
@@ -163,6 +176,7 @@ def try_generate_llm_idea_payloads(
         available_characters=available_characters,
         batch_nonce=batch_nonce,
         exclude_premise_lines=exclude_lines,
+        editorial_guidance_lines=list(editorial_guidance or ()),
     )
     url = STORY_GENERATION_BASE_URL.rstrip("/") + "/chat/completions"
     headers = {

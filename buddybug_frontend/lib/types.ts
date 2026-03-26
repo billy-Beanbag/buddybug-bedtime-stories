@@ -942,6 +942,39 @@ export interface ChildProfileRead {
   updated_at: string;
 }
 
+export interface StorySuggestionRead {
+  id: number;
+  user_id: number;
+  child_profile_id: number | null;
+  title: string | null;
+  brief: string;
+  desired_outcome: string | null;
+  inspiration_notes: string | null;
+  avoid_notes: string | null;
+  age_band: string;
+  language: string;
+  allow_reference_use: boolean;
+  status: string;
+  approved_as_reference: boolean;
+  editorial_notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StorySuggestionListResponse {
+  items: StorySuggestionRead[];
+}
+
+export interface StorySuggestionAdminRead extends StorySuggestionRead {
+  user_email: string | null;
+  user_display_name: string | null;
+  child_profile_name: string | null;
+}
+
+export interface StorySuggestionAdminListResponse {
+  items: StorySuggestionAdminRead[];
+}
+
 export interface ChildComfortProfileRead {
   id: number;
   child_profile_id: number;

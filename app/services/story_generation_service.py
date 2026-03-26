@@ -59,6 +59,17 @@ def _style_examples_block(story_brief: StoryBrief) -> str:
     return "\n".join(["Style reference examples:", *rendered_examples])
 
 
+def _editorial_guidance_block(story_brief: StoryBrief) -> str:
+    if not story_brief.editorial_guidance:
+        return "Editorial guidance from approved parent suggestions: none yet"
+    return "\n".join(
+        [
+            "Editorial guidance from approved parent suggestions:",
+            *[f"- {line}" for line in story_brief.editorial_guidance[:10]],
+        ]
+    )
+
+
 def _character_canon_block() -> str:
     return "\n".join(
         [
@@ -180,6 +191,7 @@ def build_story_generation_prompt(story_brief: StoryBrief) -> str:
             f"Supporting characters: {', '.join(story_brief.supporting_characters) if story_brief.supporting_characters else 'none'}",
             f"Founder reference titles: {style_titles}",
             _character_canon_block(),
+            _editorial_guidance_block(story_brief),
             _style_examples_block(story_brief),
             "Story rules:",
             rules,

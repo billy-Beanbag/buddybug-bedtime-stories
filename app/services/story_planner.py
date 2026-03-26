@@ -550,6 +550,7 @@ def build_story_brief(
     *,
     style_reference_titles: list[str] | None = None,
     style_reference_examples: list[str] | None = None,
+    editorial_guidance: list[str] | None = None,
 ) -> StoryBrief:
     """Build the durable narrative brief that future one-pass story generation will use."""
     metadata = build_story_metadata(
@@ -569,7 +570,7 @@ def build_story_brief(
         bedtime_feeling=metadata.bedtime_feeling,
         humour_level="gentle" if metadata.mode == BEDTIME_MODE else "giggly",
         tension_ceiling="low" if metadata.mode == BEDTIME_MODE else "mild",
-        target_word_count=680 if metadata.mode == BEDTIME_MODE else 720,
+        target_word_count=940 if metadata.mode == BEDTIME_MODE else 1000,
         main_characters=metadata.main_characters,
         supporting_characters=metadata.supporting_characters,
         series_key=metadata.series_key,
@@ -581,7 +582,8 @@ def build_story_brief(
             "avoid poetic filler and meta language",
             "use simple natural language for ages 5-7",
             "land the hook in the first two sentences",
-            "write in 5 short paragraphs with a clear beginning, middle, and ending",
+            "structure the story for about 5-6 illustrated pages: each page-sized beat should carry enough concrete detail to feel full (roughly 140-180 words per beat when totalling the whole draft)",
+            "write in 5-6 substantial paragraphs (one per spread) with a clear beginning, middle, and ending",
             "include at least two lines of spoken dialogue using standard double quotes",
             "make the ending explicitly show the problem being found, fixed, solved, or put right",
             "end with a warm, satisfying final beat",
@@ -592,6 +594,7 @@ def build_story_brief(
             "for adventure and standard stories, include at least one mischievous, giggly, or funny moment that makes children laugh",
             "adventure stories should feel upbeat and engaging, not calm or sleepy",
         ],
+        editorial_guidance=editorial_guidance or [],
         style_reference_titles=metadata.style_reference_titles,
         style_reference_examples=style_reference_examples or [],
         beat_card=beat_card,

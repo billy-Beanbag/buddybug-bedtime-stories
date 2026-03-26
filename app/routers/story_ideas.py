@@ -16,6 +16,10 @@ from app.schemas.story_schema import (
 )
 from app.services.content_lane_service import validate_content_lane_key
 from app.services.idea_generator import generate_story_idea_payloads
+from app.services.story_suggestion_service import (
+    build_story_suggestion_guidance_lines,
+    list_story_suggestion_references,
+)
 from app.utils.dependencies import get_current_admin_user
 
 router = APIRouter(
@@ -83,6 +87,15 @@ def generate_story_ideas(
         hint_lines.append(s[:240])
         if len(hint_lines) >= 35:
             break
+    suggestion_guidance = tuple(
+        build_story_suggestion_guidance_lines(
+            list_story_suggestion_references(
+                session,
+                age_band=lane.age_band,
+                limit=3,
+            )
+        )
+    )
     batch = generate_story_idea_payloads(
         count=payload.count,
         age_band=lane.age_band,
@@ -93,6 +106,7 @@ def generate_story_ideas(
         available_characters=available_characters,
         exclude_premises=frozenset(exclude_set) if exclude_set else None,
         exclude_premise_hints=tuple(hint_lines) if hint_lines else None,
+        editorial_guidance=suggestion_guidance or None,
     )
 
     created_ideas: list[StoryIdea] = []
