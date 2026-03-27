@@ -366,7 +366,7 @@ function ReaderPageContent() {
               ? matchedIndex
               : getDefaultPreviewPageIndex(bookDetail.pages);
           setCurrentIndex(nextIndex);
-          if (nextIndex > 0) {
+          if (nextIndex > 0 && !(isPreviewMode && isEditor)) {
             pendingScrollRef.current = { index: nextIndex, behavior: "auto" };
           }
         }
@@ -677,6 +677,10 @@ function ReaderPageContent() {
   }, [visiblePages.length]);
 
   useEffect(() => {
+    if (usePagedPreviewReview) {
+      pendingScrollRef.current = null;
+      return;
+    }
     if (!visiblePages.length || !pendingScrollRef.current) {
       return;
     }
@@ -687,9 +691,12 @@ function ReaderPageContent() {
     }
     targetNode.scrollIntoView({ behavior, block: "start" });
     pendingScrollRef.current = null;
-  }, [currentIndex, visiblePages.length]);
+  }, [currentIndex, usePagedPreviewReview, visiblePages.length]);
 
   useEffect(() => {
+    if (usePagedPreviewReview) {
+      return;
+    }
     if (!visiblePages.length) {
       return;
     }
@@ -734,7 +741,7 @@ function ReaderPageContent() {
       window.removeEventListener("scroll", scheduleViewportSync);
       window.removeEventListener("resize", scheduleViewportSync);
     };
-  }, [visiblePages]);
+  }, [usePagedPreviewReview, visiblePages]);
 
   useEffect(() => {
     lastHeaderScrollYRef.current = typeof window !== "undefined" ? window.scrollY : 0;
@@ -1253,28 +1260,10 @@ function ReaderPageContent() {
 
         {usePagedPreviewReview ? (
           <div className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1.5rem] border border-indigo-100 bg-indigo-50/70 px-4 py-3">
+            <div className="rounded-[1.5rem] border border-indigo-100 bg-indigo-50/70 px-4 py-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-indigo-700">Editorial preview</p>
                 <p className="mt-1 text-sm text-slate-600">Review one page at a time, then move to the next page.</p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  disabled={currentIndex <= 0}
-                  onClick={() => goToPreviewPage(currentIndex - 1)}
-                  className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 disabled:opacity-50"
-                >
-                  Previous page
-                </button>
-                <button
-                  type="button"
-                  disabled={currentIndex >= visiblePages.length - 1}
-                  onClick={() => goToPreviewPage(currentIndex + 1)}
-                  className="rounded-2xl bg-[linear-gradient(135deg,#4338ca_0%,#5b21b6_100%)] px-4 py-2 text-sm font-medium text-white shadow-[0_16px_36px_rgba(79,70,229,0.18)] disabled:opacity-50"
-                >
-                  Next page
-                </button>
               </div>
             </div>
 
