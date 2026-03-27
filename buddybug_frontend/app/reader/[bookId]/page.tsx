@@ -72,6 +72,11 @@ const GUEST_PREVIEW_ACCESS: ReaderAccessResponse = {
   reason: "Guest preview only",
 };
 
+function getDefaultPreviewPageIndex(pages: LocalizedReaderBookDetail["pages"]) {
+  const firstStoryPageIndex = pages.findIndex((page) => page.page_number > 0);
+  return firstStoryPageIndex >= 0 ? firstStoryPageIndex : 0;
+}
+
 function buildOfflineBookDetail(record: OfflineBookPackageRecord): LocalizedReaderBookDetail {
   return {
     book_id: record.payload.book.book_id,
@@ -356,7 +361,10 @@ function ReaderPageContent() {
           setSavedProgress(null);
           const previousPreviewPageNumber = lastViewedPreviewPageNumberRef.current;
           const matchedIndex = bookDetail.pages.findIndex((page) => page.page_number === previousPreviewPageNumber);
-          const nextIndex = matchedIndex >= 0 ? matchedIndex : 0;
+          const nextIndex =
+            matchedIndex >= 0 && bookDetail.pages[matchedIndex]?.page_number > 0
+              ? matchedIndex
+              : getDefaultPreviewPageIndex(bookDetail.pages);
           setCurrentIndex(nextIndex);
           if (nextIndex > 0) {
             pendingScrollRef.current = { index: nextIndex, behavior: "auto" };
@@ -1295,6 +1303,25 @@ function ReaderPageContent() {
                   }}
                 />
               ) : null}
+
+              <div className="flex flex-wrap justify-end gap-2">
+                <button
+                  type="button"
+                  disabled={currentIndex <= 0}
+                  onClick={() => goToPreviewPage(currentIndex - 1)}
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 disabled:opacity-50"
+                >
+                  Previous page
+                </button>
+                <button
+                  type="button"
+                  disabled={currentIndex >= visiblePages.length - 1}
+                  onClick={() => goToPreviewPage(currentIndex + 1)}
+                  className="rounded-2xl bg-[linear-gradient(135deg,#4338ca_0%,#5b21b6_100%)] px-4 py-2 text-sm font-medium text-white shadow-[0_16px_36px_rgba(79,70,229,0.18)] disabled:opacity-50"
+                >
+                  Next page
+                </button>
+              </div>
             </div>
           </div>
         ) : (
