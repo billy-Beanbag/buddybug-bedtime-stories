@@ -86,6 +86,7 @@ function AdminIllustrationsPageContent() {
       const response = await apiGet<AdminIllustrationSummary[]>("/admin/illustrations/queue", {
         token,
         query: { approval_status: approvalStatus || undefined },
+        timeoutMs: 60_000,
       });
       try {
         const uniquePageIds = Array.from(new Set(response.map((illustration) => illustration.story_page_id)));
@@ -93,7 +94,7 @@ function AdminIllustrationsPageContent() {
           Promise.all(
             uniquePageIds.map(async (storyPageId) => {
               try {
-                return await apiGet<EditorialStoryPageRead>(`/story-pages/${storyPageId}`, { token });
+                return await apiGet<EditorialStoryPageRead>(`/story-pages/${storyPageId}`, { token, timeoutMs: 60_000 });
               } catch {
                 return null;
               }
@@ -102,7 +103,10 @@ function AdminIllustrationsPageContent() {
           Promise.all(
             uniquePageIds.map(async (storyPageId) => {
             try {
-              const versions = await apiGet<IllustrationAssetRead[]>(`/illustrations/by-page/${storyPageId}`, { token });
+              const versions = await apiGet<IllustrationAssetRead[]>(`/illustrations/by-page/${storyPageId}`, {
+                token,
+                timeoutMs: 60_000,
+              });
               return [storyPageId, versions[0] ?? null] as const;
             } catch {
               return [storyPageId, null] as const;
@@ -117,7 +121,7 @@ function AdminIllustrationsPageContent() {
           Promise.all(
             uniqueDraftIds.map(async (draftId) => {
               try {
-                return await apiGet<EditorialStoryDraftRead>(`/story-drafts/${draftId}`, { token });
+                return await apiGet<EditorialStoryDraftRead>(`/story-drafts/${draftId}`, { token, timeoutMs: 60_000 });
               } catch {
                 return null;
               }
@@ -126,7 +130,7 @@ function AdminIllustrationsPageContent() {
           Promise.all(
             uniqueDraftIds.map(async (draftId) => {
               try {
-                return await apiGet<BookRead>(`/books/by-draft/${draftId}`, { token });
+                return await apiGet<BookRead>(`/books/by-draft/${draftId}`, { token, timeoutMs: 60_000 });
               } catch {
                 return null;
               }
@@ -137,6 +141,7 @@ function AdminIllustrationsPageContent() {
               try {
                 const refs = await apiGet<VisualReferenceAssetRead[]>(`/admin/visual-references/recommended-for-page/${storyPageId}`, {
                   token,
+                  timeoutMs: 60_000,
                 });
                 return [storyPageId, refs] as const;
               } catch {

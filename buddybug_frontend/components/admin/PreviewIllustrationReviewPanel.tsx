@@ -216,8 +216,8 @@ export function PreviewIllustrationReviewPanel({
     setError(null);
     try {
       const [pageResponse, illustrationsResponse] = await Promise.all([
-        apiGet<EditorialStoryPageRead>(`/story-pages/${storyPageId}`, { token }),
-        apiGet<AdminIllustrationSummary[]>(`/illustrations/by-page/${storyPageId}`, { token }),
+        apiGet<EditorialStoryPageRead>(`/story-pages/${storyPageId}`, { token, timeoutMs: 60_000 }),
+        apiGet<AdminIllustrationSummary[]>(`/illustrations/by-page/${storyPageId}`, { token, timeoutMs: 60_000 }),
       ]);
       setStoryPage(pageResponse);
       setIllustrations(illustrationsResponse);
@@ -311,7 +311,7 @@ export function PreviewIllustrationReviewPanel({
             story_page_id: storyPageId,
             generation_notes: combinedFeedback,
           },
-          { token, timeoutMs: 180_000 },
+          { token, timeoutMs: 300_000 },
         );
       }
       if (latestIllustration) {
