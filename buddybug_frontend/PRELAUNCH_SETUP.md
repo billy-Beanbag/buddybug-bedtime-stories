@@ -15,6 +15,7 @@ RESEND_API_KEY=re_...
 EMAIL_FROM=Buddybug <stories@updates.buddybug.app>
 SUPPORT_EMAIL=support@buddybug.app
 CRON_SECRET=choose-a-long-random-secret
+PRELAUNCH_STAFF_ACCESS_KEY=choose-a-long-random-secret
 STORY_TOKEN_TTL_DAYS=365
 ```
 
@@ -67,3 +68,5 @@ npm run dev
 - Weekly cron runs are protected by `CRON_SECRET`.
 - Unsubscribe links operate through a token rather than exposing the subscriber email address.
 - Launch-day personalised gifts can be queued later using the `PersonalizedGift` table that is already in the schema.
+- Staff can temporarily unlock the full app during pre-launch by visiting `/access?key=<PRELAUNCH_STAFF_ACCESS_KEY>&next=/library`.
+- To return to the public pre-launch experience, visit `/access/exit`.
