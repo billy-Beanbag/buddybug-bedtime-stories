@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum SubscriberStatus {
+  ACTIVE
+  UNSUBSCRIBED
+  BOUNCED
+}
+
+enum DeliveryType {
+  WELCOME
+  WEEKLY
+  LAUNCH_GIFT
+}
+
+enum PersonalizedGiftStatus {
+  PENDING
+  GENERATED
+  SENT
+  FAILED
+}
+
+model Subscriber {
+  id                  String             @id @default(cuid())
+  email               String             @unique
+  childFirstName      String
+  childAge            Int
+  consentToEmails     Boolean
+  marketingAttribution String?
+  unsubscribeToken    String             @unique
+  status              SubscriberStatus   @default(ACTIVE)
+  storyPoolExhaustedAt DateTime?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  deliveries          StoryDelivery[]
+  personalizedGifts   PersonalizedGift[]
+
+  @@index([status, createdAt])
+  @@index([storyPoolExhaustedAt])
+}
+
+model Story {
+  id          String          @id @default(cuid())
+  slug        String          @unique
+  title       String
+  ageMin      Int
+  ageMax      Int
+  contentHtml String?
+  contentJson Json?
+  pdfUrl      String?
+  isActive    Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  deliveries  StoryDelivery[]
+
+  @@index([isActive, ageMin, ageMax])
+}
+
+model StoryDelivery {
+  id             String       @id @default(cuid())
+  subscriberId   String
+  storyId        String
+  sentAt         DateTime?
+  emailMessageId String?
+  deliveryType   DeliveryType
+  secureToken    String       @unique
+  deliveryKey    String?      @unique
+  openedAt       DateTime?
+  expiresAt      DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  subscriber     Subscriber   @relation(fields: [subscriberId], references: [id], onDelete: Cascade)
+  story          Story        @relation(fields: [storyId], references: [id], onDelete: Restrict)
+
+  @@unique([subscriberId, storyId])
+  @@index([subscriberId, deliveryType, sentAt])
+  @@index([storyId, deliveryType])
+}
+
+model PersonalizedGift {
+  id                    String                 @id @default(cuid())
+  subscriberId          String
+  status                PersonalizedGiftStatus @default(PENDING)
+  generatedStoryContent String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  sentAt                DateTime?
+  subscriber            Subscriber             @relation(fields: [subscriberId], references: [id], onDelete: Cascade)
+
+  @@index([subscriberId, status])
+  @@index([status, createdAt])
+}
+
+model SignupRateLimitEvent {
+  id        String   @id @default(cuid())
+  key       String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([key, createdAt])
+  @@index([expiresAt])
+}

@@ -2,7 +2,9 @@ import type { ReactNode } from "react";
 import type { Metadata, Viewport } from "next";
 
 import { AppShell } from "@/components/AppShell";
+import { PrelaunchShell } from "@/components/prelaunch/PrelaunchShell";
 import { APP_NAME } from "@/lib/app-config";
+import { isPrelaunchModeEnabled } from "@/lib/prelaunch/config";
 import { AuthProvider } from "@/context/AuthContext";
 import { ChildProfileProvider } from "@/context/ChildProfileContext";
 import { ConnectivityProvider } from "@/context/ConnectivityContext";
@@ -46,7 +48,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
                 <OnboardingProvider>
                   <FeatureFlagsProvider>
                     <ParentalControlsProvider>
-                      <AppShell>{children}</AppShell>
+                      {isPrelaunchModeEnabled() ? <PrelaunchShell>{children}</PrelaunchShell> : <AppShell>{children}</AppShell>}
                     </ParentalControlsProvider>
                   </FeatureFlagsProvider>
                 </OnboardingProvider>

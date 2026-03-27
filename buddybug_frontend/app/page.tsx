@@ -1,21 +1,27 @@
 import type { Metadata } from "next";
 
+import { PrelaunchLandingPage } from "@/components/prelaunch/PrelaunchLandingPage";
 import { FeatureGrid } from "@/components/home/FeatureGrid";
 import { HeroSection } from "@/components/home/HeroSection";
 import { HomeCTA } from "@/components/home/HomeCTA";
 import { HowItWorks } from "@/components/home/HowItWorks";
+import { isPrelaunchModeEnabled } from "@/lib/prelaunch/config";
 
 export const metadata: Metadata = {
-  title: "Buddybug | Calm Bedtime Stories for Families",
+  title: "Buddybug | Weekly Bedtime Stories Before Launch",
   description:
-    "A warm bedtime storytelling app with illustrated stories, narrated reading, child profiles, bedtime packs, and parental controls.",
+    "Join Buddybug before launch to receive calming bedtime stories by email each week, plus a personalised launch-day gift story.",
   openGraph: {
-    title: "Buddybug | Calm Bedtime Stories for Families",
-    description: "Illustrated bedtime stories, narrated reading, child profiles, and bedtime packs for calmer family evenings.",
+    title: "Buddybug | Weekly Bedtime Stories Before Launch",
+    description: "A magical pre-launch signup for weekly bedtime stories delivered by private email links.",
   },
 };
 
 export default function HomePage() {
+  if (isPrelaunchModeEnabled()) {
+    return <PrelaunchLandingPage />;
+  }
+
   return (
     <div className="space-y-14 pb-4 md:space-y-16">
       <HeroSection />

@@ -51,3 +51,22 @@ input,
 textarea {
   font: inherit;
 }
+
+.bb-story-html h1,
+.bb-story-html h2,
+.bb-story-html h3 {
+  margin: 0 0 1rem;
+  color: #020617;
+  line-height: 1.2;
+}
+
+.bb-story-html h1 {
+  font-size: 2rem;
+}
+
+.bb-story-html p {
+  margin: 0 0 1.25rem;
+  color: #334155;
+  font-size: 1.05rem;
+  line-height: 1.95;
+}
