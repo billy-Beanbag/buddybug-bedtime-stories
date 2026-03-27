@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { SignupForm } from "@/components/prelaunch/SignupForm";
@@ -31,9 +32,17 @@ export function PrelaunchLandingPage() {
                 <p className="font-semibold text-slate-950">Private story links only</p>
                 <p className="mt-2 leading-6">No gimmicks, no advertising, just your secure story email.</p>
               </div>
-              <div className="rounded-2xl border border-white/70 bg-white/80 p-4">
-                <p className="font-semibold text-slate-950">Launch-day gift</p>
-                <p className="mt-2 leading-6">Subscribers receive a personalised story when Buddybug officially opens.</p>
+              <div className="overflow-hidden rounded-2xl border border-white/70 bg-[linear-gradient(180deg,#e0e7ff_0%,#eef2ff_100%)]">
+                <div className="relative aspect-[4/5] w-full">
+                  <Image
+                    src="/home/verity-reading.jpeg"
+                    alt="Verity reading with Dolly and Daphne"
+                    fill
+                    sizes="(max-width: 640px) 100vw, 240px"
+                    className="object-cover object-center"
+                    priority
+                  />
+                </div>
               </div>
             </div>
           </div>
