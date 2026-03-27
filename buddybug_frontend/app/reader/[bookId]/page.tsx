@@ -160,6 +160,7 @@ function ReaderPageContent() {
   const [onboardingStoryTracked, setOnboardingStoryTracked] = useState(false);
   const [previewWallCopy, setPreviewWallCopy] = useState<MessageExperimentSurfaceCopy | null>(null);
   const [previewRefreshKey, setPreviewRefreshKey] = useState(0);
+  const [pinnedPreviewReviewPageNumber, setPinnedPreviewReviewPageNumber] = useState<number | null>(null);
   const [readAlongDetail, setReadAlongDetail] = useState<ReadAlongDetailResponse | null>(null);
   const [readAlongLoading, setReadAlongLoading] = useState(false);
   const [readAlongError, setReadAlongError] = useState<string | null>(null);
@@ -187,6 +188,10 @@ function ReaderPageContent() {
       lastViewedPreviewPageNumberRef.current = book.pages[currentIndex].page_number;
     }
   }, [book, currentIndex, isPreviewMode]);
+
+  useEffect(() => {
+    setPinnedPreviewReviewPageNumber(null);
+  }, [bookId, previewRefreshKey]);
 
   useEffect(() => {
     void fetchMessageExperimentBundle({ token, user }).then((bundle) => setPreviewWallCopy(bundle.preview_wall));
@@ -604,6 +609,7 @@ function ReaderPageContent() {
   const lastPageNumber = book?.pages[book.pages.length - 1]?.page_number ?? 0;
   const isAtStoryEnd = currentPage ? currentPage.page_number >= lastPageNumber : false;
   const isAtVisibleEnd = visiblePages.length > 0 ? currentIndex >= visiblePages.length - 1 : false;
+  const usePagedPreviewReview = isPreviewMode && isEditor;
   const activeReadAlongDetail = readAlongDetail?.session.book_id === bookId ? readAlongDetail : null;
   const completed = Boolean(savedProgress?.completed || (canReadFullBook && isAtStoryEnd));
   const activeBedtimePackContext = useMemo(() => {
@@ -641,6 +647,18 @@ function ReaderPageContent() {
       return;
     }
     pendingScrollRef.current = { index: clampedIndex, behavior };
+  }
+
+  function goToPreviewPage(index: number) {
+    if (!visiblePages.length) {
+      return;
+    }
+    const clampedIndex = Math.max(0, Math.min(index, visiblePages.length - 1));
+    setPinnedPreviewReviewPageNumber(null);
+    setCurrentIndex(clampedIndex);
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   }
 
   useEffect(() => {
@@ -1225,39 +1243,106 @@ function ReaderPageContent() {
           </div>
         </header>
 
-        <div className="space-y-6">
-          {visiblePages.map((page, index) => (
-            <div
-              key={`reader-page-${page.page_number}-${previewRefreshKey}`}
-              ref={(node) => {
-                pageRefs.current[index] = node;
-              }}
-              className="scroll-mt-32 space-y-3"
-            >
+        {usePagedPreviewReview ? (
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1.5rem] border border-indigo-100 bg-indigo-50/70 px-4 py-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-indigo-700">Editorial preview</p>
+                <p className="mt-1 text-sm text-slate-600">Review one page at a time, then move to the next page.</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={currentIndex <= 0}
+                  onClick={() => goToPreviewPage(currentIndex - 1)}
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 disabled:opacity-50"
+                >
+                  Previous page
+                </button>
+                <button
+                  type="button"
+                  disabled={currentIndex >= visiblePages.length - 1}
+                  onClick={() => goToPreviewPage(currentIndex + 1)}
+                  className="rounded-2xl bg-[linear-gradient(135deg,#4338ca_0%,#5b21b6_100%)] px-4 py-2 text-sm font-medium text-white shadow-[0_16px_36px_rgba(79,70,229,0.18)] disabled:opacity-50"
+                >
+                  Next page
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-3">
               <div className="px-1">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  {page.page_number === 0 ? "Cover" : `Page ${page.page_number} of ${lastPageNumber}`}
+                  {currentPage.page_number === 0 ? "Cover" : `Page ${currentPage.page_number} of ${lastPageNumber}`}
                 </p>
               </div>
-              <div className={index === currentIndex ? "rounded-[2.25rem] ring-2 ring-indigo-200/80 ring-offset-2 ring-offset-transparent" : ""}>
-                <ReaderPageView book={book} page={page} />
+              <div className="rounded-[2.25rem] ring-2 ring-indigo-200/80 ring-offset-2 ring-offset-transparent">
+                <ReaderPageView book={book} page={currentPage} />
               </div>
-              {isPreviewMode && isEditor && index === currentIndex && page.page_number > 0 ? (
+              {currentPage.page_number > 0 ? (
                 <PreviewIllustrationReviewPanel
-                  page={page}
-                  pageIndex={index}
+                  page={currentPage}
+                  pageIndex={currentIndex}
                   bookId={book.book_id}
                   storyDraftId={book.story_draft_id ?? null}
                   pageMapping={book.page_mapping ?? null}
                   token={token}
+                  onActiveReviewChange={(active) => {
+                    setPinnedPreviewReviewPageNumber(active ? currentPage.page_number : null);
+                  }}
                   onPreviewUpdated={async () => {
                     setPreviewRefreshKey((current) => current + 1);
                   }}
                 />
               ) : null}
             </div>
-          ))}
-        </div>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {visiblePages.map((page, index) => (
+              <div
+                key={`reader-page-${page.page_number}-${previewRefreshKey}`}
+                ref={(node) => {
+                  pageRefs.current[index] = node;
+                }}
+                className="scroll-mt-32 space-y-3"
+              >
+                <div className="px-1">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    {page.page_number === 0 ? "Cover" : `Page ${page.page_number} of ${lastPageNumber}`}
+                  </p>
+                </div>
+                <div className={index === currentIndex ? "rounded-[2.25rem] ring-2 ring-indigo-200/80 ring-offset-2 ring-offset-transparent" : ""}>
+                  <ReaderPageView book={book} page={page} />
+                </div>
+                {isPreviewMode &&
+                isEditor &&
+                page.page_number > 0 &&
+                (index === currentIndex || pinnedPreviewReviewPageNumber === page.page_number) ? (
+                  <PreviewIllustrationReviewPanel
+                    page={page}
+                    pageIndex={index}
+                    bookId={book.book_id}
+                    storyDraftId={book.story_draft_id ?? null}
+                    pageMapping={book.page_mapping ?? null}
+                    token={token}
+                    onActiveReviewChange={(active) => {
+                      setPinnedPreviewReviewPageNumber((current) => {
+                        if (active) {
+                          return page.page_number;
+                        }
+                        return current === page.page_number ? null : current;
+                      });
+                    }}
+                    onPreviewUpdated={async () => {
+                      setPreviewRefreshKey((current) => current + 1);
+                    }}
+                  />
+                ) : null}
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {narratedStoriesEnabled ? (

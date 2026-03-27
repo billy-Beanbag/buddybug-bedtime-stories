@@ -145,6 +145,7 @@ export function PreviewIllustrationReviewPanel({
   pageMapping,
   token,
   onPreviewUpdated,
+  onActiveReviewChange,
 }: {
   page: ReaderPageRead;
   pageIndex: number;
@@ -153,6 +154,7 @@ export function PreviewIllustrationReviewPanel({
   pageMapping: Record<number, number> | null | undefined;
   token: string | null;
   onPreviewUpdated: () => Promise<void> | void;
+  onActiveReviewChange?: (active: boolean) => void;
 }) {
   const initialStoryPageId =
     page.source_story_page_id ?? pageMapping?.[page.page_number] ?? null;
@@ -365,6 +367,10 @@ export function PreviewIllustrationReviewPanel({
     setCharactersDraft(storyPage?.characters_present || "");
     setIllustrationPromptDraft(storyPage?.illustration_prompt || "");
   }, [storyPage]);
+
+  useEffect(() => {
+    onActiveReviewChange?.(showRejectForm || showEditForm || busyAction !== null || savingEdits);
+  }, [busyAction, onActiveReviewChange, savingEdits, showEditForm, showRejectForm]);
 
   if (resolvingFallback) {
     return (
