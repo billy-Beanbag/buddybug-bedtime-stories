@@ -744,6 +744,10 @@ function ReaderPageContent() {
   }, [usePagedPreviewReview, visiblePages]);
 
   useEffect(() => {
+    if (usePagedPreviewReview) {
+      setIsHeaderVisible(true);
+      return;
+    }
     lastHeaderScrollYRef.current = typeof window !== "undefined" ? window.scrollY : 0;
     setIsHeaderVisible(true);
 
@@ -780,7 +784,7 @@ function ReaderPageContent() {
       }
       window.removeEventListener("scroll", scheduleHeaderVisibility);
     };
-  }, [bookId, previewRefreshKey]);
+  }, [bookId, previewRefreshKey, usePagedPreviewReview]);
 
   useEffect(() => {
     if (!readAlongDetail || readAlongDetail.session.book_id === bookId) {
@@ -1212,9 +1216,13 @@ function ReaderPageContent() {
     <div className="space-y-4">
       <section className="space-y-4">
         <header
-          className={`sticky top-2 z-20 rounded-[1.75rem] border border-white/70 bg-white/88 px-4 py-3 shadow-sm backdrop-blur transition duration-200 ${
-            isHeaderVisible ? "translate-y-0 opacity-100" : "-translate-y-[calc(100%+0.75rem)] opacity-0"
-          }`}
+          className={
+            usePagedPreviewReview
+              ? "rounded-[1.75rem] border border-white/70 bg-white/92 px-4 py-3 shadow-sm"
+              : `sticky top-2 z-20 rounded-[1.75rem] border border-white/70 bg-white/88 px-4 py-3 shadow-sm backdrop-blur transition duration-200 ${
+                  isHeaderVisible ? "translate-y-0 opacity-100" : "-translate-y-[calc(100%+0.75rem)] opacity-0"
+                }`
+          }
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <Link
