@@ -23,7 +23,7 @@ from app.services.i18n_service import (
     get_localized_reader_pages,
     get_supported_languages,
 )
-from app.services.parental_controls_service import filter_books_by_parental_controls, is_book_allowed, resolve_parental_controls
+from app.services.parental_controls_service import is_age_band_allowed, resolve_parental_controls
 from app.services.reader_service import (
     get_book_or_404,
     get_book_pages,
@@ -58,6 +58,10 @@ def _resolve_controls(session: Session, *, current_user: User | None, child_prof
     return resolve_parental_controls(session, user=current_user, child_profile_id=child_profile_id)
 
 
+def _is_book_allowed_for_reader(book, *, controls) -> bool:
+    return is_age_band_allowed(requested_age_band=book.age_band, controls=controls)
+
+
 @router.get("/books", response_model=list[ReaderBookSummary], summary="List published books for reading")
 def list_reader_books(
     age_band: str | None = Query(default=None),
@@ -88,7 +92,8 @@ def list_reader_books(
         limit=limit,
     )
     pre_filter_count = len(books)
-    books = filter_books_by_parental_controls(books, controls=controls)
+    if controls is not None:
+        books = [book for book in books if _is_book_allowed_for_reader(book, controls=controls)]
     if controls is not None and len(books) != pre_filter_count:
         track_event_safe(
             session,
@@ -130,7 +135,7 @@ def get_reader_book(
         from app.services.reader_service import get_published_book_or_404
 
         book = get_published_book_or_404(session, book_id)
-        if not is_book_allowed(book, controls=controls):
+        if not _is_book_allowed_for_reader(book, controls=controls):
             track_event_safe(
                 session,
                 event_name="age_band_filtered_by_parental_controls",
@@ -269,7 +274,7 @@ def get_reader_book_pages(
         from app.services.reader_service import get_published_book_or_404
 
         book = get_published_book_or_404(session, book_id)
-        if not is_book_allowed(book, controls=controls):
+        if not _is_book_allowed_for_reader(book, controls=controls):
             raise HTTPException(status_code=403, detail="This story is unavailable with the current parental controls")
     pages, _ = get_localized_reader_pages(
         session,
@@ -308,7 +313,7 @@ def get_reader_page(
         from app.services.reader_service import get_published_book_or_404
 
         book = get_published_book_or_404(session, book_id)
-        if not is_book_allowed(book, controls=controls):
+        if not _is_book_allowed_for_reader(book, controls=controls):
             raise HTTPException(status_code=403, detail="This story is unavailable with the current parental controls")
     return get_localized_reader_book_page(
         session,

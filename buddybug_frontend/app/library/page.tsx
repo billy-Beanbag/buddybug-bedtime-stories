@@ -4,11 +4,9 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { BookCard } from "@/components/BookCard";
-import { BedtimeModeBadge } from "@/components/BedtimeModeBadge";
 import { EmptyState } from "@/components/EmptyState";
 import { LoadingState } from "@/components/LoadingState";
 import { RecommendedBookCard } from "@/components/RecommendedBookCard";
-import { SaveBookButton } from "@/components/SaveBookButton";
 import { useAuth } from "@/context/AuthContext";
 import { useChildProfiles } from "@/context/ChildProfileContext";
 import { useFeatureFlags } from "@/context/FeatureFlagsContext";
@@ -16,13 +14,11 @@ import { useLocale } from "@/context/LocaleContext";
 import { useParentalControls } from "@/context/ParentalControlsContext";
 import {
   trackAgeBandFilteredByParentalControls,
-  trackBedtimeModeUsed,
   trackLibraryViewed,
   trackRecommendationViewed,
 } from "@/lib/analytics";
 import { apiGet } from "@/lib/api";
-import { fetchSavedLibrary } from "@/lib/library";
-import type { RecommendationsResponse, RecommendedBookScore, ReaderBookSummary, UserLibraryItemRead } from "@/lib/types";
+import type { RecommendationsResponse, RecommendedBookScore, ReaderBookSummary } from "@/lib/types";
 
 const BEDTIME_LANE = "bedtime_3_7";
 const ADVENTURE_LANE = "story_adventures_3_7";
@@ -70,7 +66,6 @@ export default function LibraryPage() {
   const { locale, t } = useLocale();
   const [books, setBooks] = useState<ReaderBookSummary[]>([]);
   const [recommended, setRecommended] = useState<RecommendedBookScore[]>([]);
-  const [savedItemsByBookId, setSavedItemsByBookId] = useState<Record<number, UserLibraryItemRead>>({});
   const [selectedAgeBand, setSelectedAgeBand] = useState<"all" | "3-7" | "8-12">("all");
   const [selectedRoute, setSelectedRoute] = useState<LibraryRouteFilter>("all");
   const [loading, setLoading] = useState(true);
@@ -90,9 +85,6 @@ export default function LibraryPage() {
     () => recommended.filter((item) => matchesRoute(selectedRoute, item.content_lane_key)),
     [recommended, selectedRoute],
   );
-  const bedtimeModeBlocksAdventure = Boolean(
-    selectedRoute === ADVENTURE_LANE && resolvedControls?.bedtime_mode_enabled,
-  );
 
   useEffect(() => {
     setSelectedRoute(readStoredLibraryRoute());
@@ -110,18 +102,6 @@ export default function LibraryPage() {
       childProfileId: selectedChildProfile?.id,
     });
   }, [effectiveLanguage, selectedChildProfile?.id, token, user]);
-
-  useEffect(() => {
-    if (resolvedControls?.bedtime_mode_enabled) {
-      void trackBedtimeModeUsed(undefined, {
-        token,
-        user,
-        language: effectiveLanguage,
-        childProfileId: selectedChildProfile?.id,
-        source: "library_page",
-      });
-    }
-  }, [effectiveLanguage, resolvedControls?.bedtime_mode_enabled, selectedChildProfile?.id, token, user]);
 
   useEffect(() => {
     if (resolvedControls?.max_allowed_age_band === "3-7" && selectedAgeBand === "8-12") {
@@ -181,17 +161,6 @@ export default function LibraryPage() {
         ]);
         setBooks(data);
         setRecommended(recommendations.items.slice(0, 1));
-        if (isAuthenticated && token) {
-          const savedLibrary = await fetchSavedLibrary({
-            token,
-            childProfileId: selectedChildProfile?.id,
-          });
-          setSavedItemsByBookId(
-            Object.fromEntries(savedLibrary.items.map((item) => [item.book_id, item])),
-          );
-        } else {
-          setSavedItemsByBookId({});
-        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unable to load books");
       } finally {
@@ -235,22 +204,14 @@ export default function LibraryPage() {
     return <EmptyState title="Unable to load library" description={error} />;
   }
 
-  const emptyStateTitle = bedtimeModeBlocksAdventure
-    ? "Adventure stories are hidden right now"
-    : "No published books yet";
-  const emptyStateDescription = bedtimeModeBlocksAdventure
-    ? selectedChildProfile
-      ? `Adventure stories for ${selectedChildProfile.display_name} are currently hidden because Bedtime mode is on. Switch to Bedtime or All stories, or turn Bedtime mode off when you want a more energetic read.`
-      : "Adventure stories are currently hidden because Bedtime mode is on. Switch to Bedtime or All stories, or turn Bedtime mode off when you want a more energetic read."
-    : selectedRoute === BEDTIME_LANE
+  const emptyStateTitle = "No published books yet";
+  const emptyStateDescription = selectedRoute === BEDTIME_LANE
       ? "No bedtime stories are published yet for this view."
       : selectedRoute === ADVENTURE_LANE
         ? "No adventure stories are published yet for this view."
         : selectedAgeBand === "all"
           ? selectedChildProfile
-            ? resolvedControls?.bedtime_mode_enabled
-              ? `No published stories are currently visible for ${selectedChildProfile.display_name}. Bedtime mode or parental controls may be hiding adventure stories.`
-              : `No published stories are available yet for ${selectedChildProfile.display_name}.`
+            ? `No published stories are available yet for ${selectedChildProfile.display_name}.`
             : "Once books are published from the backend workflow, they will appear here."
           : `No published ${selectedAgeBand} stories are available yet.`;
 
@@ -288,21 +249,10 @@ export default function LibraryPage() {
       <div>
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-2xl font-semibold text-slate-900">{t("libraryTitle")}</h2>
-          {isAuthenticated ? (
-            <Link
-              href="/saved"
-              className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900"
-            >
-              Saved books
-            </Link>
-          ) : null}
         </div>
         <p className="mt-1 text-sm text-slate-600">
           {t("libraryDescription")}
         </p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          <BedtimeModeBadge active={Boolean(resolvedControls?.bedtime_mode_enabled)} />
-        </div>
         <div className="mt-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Choose your story route</p>
           <div className="mt-3 grid gap-2 sm:grid-cols-3">
@@ -324,12 +274,6 @@ export default function LibraryPage() {
               </button>
             ))}
           </div>
-          {bedtimeModeBlocksAdventure ? (
-            <p className="mt-3 text-sm text-amber-700">
-              Bedtime mode is currently hiding adventure stories. Switch to Bedtime or All stories, or turn Bedtime mode
-              off when you want a more energetic read.
-            </p>
-          ) : null}
         </div>
         {isAuthenticated ? (
           <div className="mt-4 rounded-3xl border border-indigo-200 bg-[linear-gradient(135deg,rgba(238,242,255,0.96),rgba(245,243,255,0.96))] p-4 shadow-sm">
@@ -381,37 +325,16 @@ export default function LibraryPage() {
       ) : (
         <div className="grid gap-4">
           {books.map((book) => (
-            <div key={book.book_id} className="space-y-3">
-              <BookCard
-                book={book}
-                subtitle={
-                  hasPremiumAccess
-                    ? `${book.page_count} pages • ${book.language.toUpperCase()} • ${t("fullAccess")}`
-                    : `${book.page_count} pages • ${book.language.toUpperCase()} • ${t("previewAvailable")}`
-                }
-                statusLabel={hasPremiumAccess ? t("premium") : t("preview")}
-              />
-              <div className="flex items-center justify-between gap-3 rounded-3xl border border-white/10 bg-[linear-gradient(135deg,#111827_0%,#1e1b4b_42%,#312e81_74%,#4338ca_100%)] px-4 py-3 text-white shadow-[0_20px_50px_rgba(30,41,59,0.16)]">
-                <div className="text-sm text-slate-200">Save stories to your Buddybug library for quick access later.</div>
-                <SaveBookButton
-                  bookId={book.book_id}
-                  token={token}
-                  childProfileId={selectedChildProfile?.id}
-                  initialItem={savedItemsByBookId[book.book_id] ?? null}
-                  onChanged={(item) =>
-                    setSavedItemsByBookId((current) => {
-                      const next = { ...current };
-                      if (item) {
-                        next[book.book_id] = item;
-                      } else {
-                        delete next[book.book_id];
-                      }
-                      return next;
-                    })
-                  }
-                />
-              </div>
-            </div>
+            <BookCard
+              key={book.book_id}
+              book={book}
+              subtitle={
+                hasPremiumAccess
+                  ? `${book.page_count} pages • ${book.language.toUpperCase()} • ${t("fullAccess")}`
+                  : `${book.page_count} pages • ${book.language.toUpperCase()} • ${t("previewAvailable")}`
+              }
+              statusLabel={hasPremiumAccess ? t("premium") : t("preview")}
+            />
           ))}
         </div>
       )}
