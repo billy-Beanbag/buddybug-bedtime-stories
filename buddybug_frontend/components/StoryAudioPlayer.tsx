@@ -38,7 +38,7 @@ export function StoryAudioPlayer({
   const shouldResumeAfterAdvance = useRef(false);
   const resumeDelayMs = useRef(0);
   const resumeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [enabled, setEnabled] = useState(true);
+  const [enabled, setEnabled] = useState(false);
   const [storyReadsItself, setStoryReadsItself] = useState(false);
   const [segmentIndex, setSegmentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -131,22 +131,22 @@ export function StoryAudioPlayer({
         </button>
         <button
           type="button"
-          disabled={!enabled}
+          disabled={!currentSegment}
           onClick={() => {
-            if (!enabled) {
-              return;
-            }
             if (isPlaying) {
               setStoryReadsItself(false);
               audioRef.current?.pause();
               return;
+            }
+            if (!enabled) {
+              setEnabled(true);
             }
             setStoryReadsItself(autoplayAllowed);
             resumeDelayMs.current = 0;
             void audioRef.current?.play().catch(() => undefined);
           }}
           className={`rounded-2xl px-4 py-2.5 text-sm font-semibold transition ${
-            enabled
+            enabled || isPlaying
               ? "bg-[linear-gradient(135deg,#4338ca_0%,#5b21b6_100%)] text-white shadow-[0_16px_36px_rgba(79,70,229,0.18)]"
               : "border border-slate-200 bg-white text-slate-900"
           } disabled:cursor-not-allowed disabled:opacity-50`}
