@@ -14,6 +14,7 @@ class ReaderBookSummary(SQLModel):
     published: bool
     publication_status: str
     page_count: int
+    audio_available: bool = False
 
 
 class ReaderPageRead(SQLModel):

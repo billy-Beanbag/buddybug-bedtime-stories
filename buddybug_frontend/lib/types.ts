@@ -27,6 +27,7 @@ export interface ReaderBookSummary {
   published: boolean;
   publication_status: string;
   page_count: number;
+  audio_available?: boolean;
 }
 
 export interface ClassroomSetRead {

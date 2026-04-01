@@ -397,6 +397,7 @@ def build_localized_book_summaries(
                 published=book.published,
                 publication_status=book.publication_status,
                 page_count=page_count_lookup.get(book.id, 0),
+                audio_available=book.audio_available,
             )
         )
     return summaries

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { EmptyState } from "@/components/EmptyState";
 import { LoadingState } from "@/components/LoadingState";
@@ -172,6 +172,8 @@ function ReaderPageContent() {
   const lastViewedPreviewPageNumberRef = useRef(0);
   const pageRefs = useRef<Array<HTMLDivElement | null>>([]);
   const pendingScrollRef = useRef<{ index: number; behavior: ScrollBehavior } | null>(null);
+  const narrationPendingSinceRef = useRef<number | null>(null);
+  const narrationPollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastHeaderScrollYRef = useRef(0);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
 
@@ -453,7 +455,7 @@ function ReaderPageContent() {
     user,
   ]);
 
-  useEffect(() => {
+  const loadNarrationState = useCallback(async () => {
     if (!bookId || authLoading || usingOfflinePackage || !isOnline) {
       return;
     }
@@ -464,35 +466,91 @@ function ReaderPageContent() {
     }
 
     const authToken = isAuthenticated ? token : null;
-    async function loadNarrationState() {
-      try {
-        const response = await apiGet<ReaderNarrationResponse>(`/narration/books/${bookId}`, {
-          token: authToken,
-          query: {
-            language: effectiveLanguage,
-            child_profile_id: authenticatedChildProfileId,
-          },
-        });
-        setNarration(response);
-        setNarrationMessage(null);
-      } catch (err) {
-        if (err instanceof ApiError && err.status === 404) {
-          setNarration(null);
-          setNarrationMessage("Narrated version coming soon.");
-          return;
-        }
-        if (err instanceof ApiError && err.status === 403) {
-          setNarration(null);
-          setNarrationMessage(err.message);
-          return;
-        }
+    try {
+      const response = await apiGet<ReaderNarrationResponse>(`/narration/books/${bookId}`, {
+        token: authToken,
+        query: {
+          language: effectiveLanguage,
+          child_profile_id: authenticatedChildProfileId,
+        },
+      });
+      setNarration(response);
+      setNarrationMessage(null);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) {
         setNarration(null);
         setNarrationMessage("Narrated version coming soon.");
+        return;
       }
+      if (err instanceof ApiError && err.status === 403) {
+        setNarration(null);
+        setNarrationMessage(err.message);
+        return;
+      }
+      setNarration(null);
+      setNarrationMessage("Narrated version coming soon.");
+    }
+  }, [
+    authLoading,
+    authenticatedChildProfileId,
+    bookId,
+    effectiveLanguage,
+    isAuthenticated,
+    isOnline,
+    narratedStoriesEnabled,
+    token,
+    usingOfflinePackage,
+  ]);
+
+  useEffect(() => {
+    void loadNarrationState();
+  }, [loadNarrationState]);
+
+  useEffect(() => {
+    narrationPendingSinceRef.current = null;
+    if (narrationPollTimeoutRef.current) {
+      clearTimeout(narrationPollTimeoutRef.current);
+      narrationPollTimeoutRef.current = null;
+    }
+  }, [bookId]);
+
+  useEffect(() => {
+    if (narrationPollTimeoutRef.current) {
+      clearTimeout(narrationPollTimeoutRef.current);
+      narrationPollTimeoutRef.current = null;
     }
 
-    void loadNarrationState();
-  }, [authLoading, bookId, effectiveLanguage, isAuthenticated, isOnline, narratedStoriesEnabled, selectedChildProfile?.id, token, usingOfflinePackage]);
+    if (
+      narration ||
+      narrationMessage !== "Narrated version coming soon." ||
+      !narratedStoriesEnabled ||
+      usingOfflinePackage ||
+      !isOnline
+    ) {
+      narrationPendingSinceRef.current = null;
+      return;
+    }
+
+    if (narrationPendingSinceRef.current === null) {
+      narrationPendingSinceRef.current = Date.now();
+    }
+
+    const elapsedMs = Date.now() - narrationPendingSinceRef.current;
+    if (elapsedMs >= 180_000) {
+      return;
+    }
+
+    narrationPollTimeoutRef.current = setTimeout(() => {
+      void loadNarrationState();
+    }, 8_000);
+
+    return () => {
+      if (narrationPollTimeoutRef.current) {
+        clearTimeout(narrationPollTimeoutRef.current);
+        narrationPollTimeoutRef.current = null;
+      }
+    };
+  }, [isOnline, loadNarrationState, narratedStoriesEnabled, narration, narrationMessage, usingOfflinePackage]);
 
   useEffect(() => {
     if (!bookId || !isOnline) {
