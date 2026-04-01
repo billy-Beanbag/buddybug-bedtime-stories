@@ -37,7 +37,6 @@ import {
   trackPreviewWallUpgradeClicked,
   trackPreviewWallHit,
   trackRecommendationViewed,
-  trackVoiceSelected,
 } from "@/lib/analytics";
 import { apiGet, apiPatch, apiPost, ApiError } from "@/lib/api";
 import { getReaderIdentifier } from "@/lib/auth";
@@ -46,14 +45,12 @@ import { fetchMessageExperimentBundle } from "@/lib/message-experiments";
 import { queueSyncAction } from "@/lib/offline-sync";
 import { getOfflineBookPackage } from "@/lib/offline-storage";
 import type {
-  AvailableVoicesResponse,
   BedtimePackDetailResponse,
   BedtimePackItemRead,
   CheckoutSessionResponse,
   MessageExperimentSurfaceCopy,
   OfflineBookPackageRecord,
   LocalizedReaderBookDetail,
-  NarrationVoiceRead,
   ReadAlongDetailResponse,
   ReadAlongJoinResponse,
   RecommendationsResponse,
@@ -148,8 +145,6 @@ function ReaderPageContent() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [savedProgress, setSavedProgress] = useState<ReadingProgressRead | null>(null);
   const [narration, setNarration] = useState<ReaderNarrationResponse | null>(null);
-  const [availableVoices, setAvailableVoices] = useState<NarrationVoiceRead[]>([]);
-  const [selectedVoiceKey, setSelectedVoiceKey] = useState<string | null>(null);
   const [narrationMessage, setNarrationMessage] = useState<string | null>(null);
   const [readerAccess, setReaderAccess] = useState<ReaderAccessResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -232,21 +227,6 @@ function ReaderPageContent() {
             reason: "Offline package loaded",
           });
           setNarration(buildOfflineNarration(cachedOfflinePackage));
-          setAvailableVoices(
-            cachedOfflinePackage.payload.audio
-              ? [
-                  {
-                    id: 0,
-                    key: cachedOfflinePackage.payload.audio.voice_key,
-                    display_name: cachedOfflinePackage.payload.audio.voice_display_name,
-                    language: cachedOfflinePackage.payload.audio.language,
-                    style: null,
-                    description: "Offline narration",
-                    is_premium: false,
-                  },
-                ]
-              : [],
-          );
           setNarrationMessage(cachedOfflinePackage.payload.audio ? null : "Offline reading loaded. Audio is best-effort.");
           setCurrentIndex(0);
           setSavedProgress(null);
@@ -392,21 +372,6 @@ function ReaderPageContent() {
             reason: "Offline package loaded",
           });
           setNarration(buildOfflineNarration(cachedOfflinePackage));
-          setAvailableVoices(
-            cachedOfflinePackage.payload.audio
-              ? [
-                  {
-                    id: 0,
-                    key: cachedOfflinePackage.payload.audio.voice_key,
-                    display_name: cachedOfflinePackage.payload.audio.voice_display_name,
-                    language: cachedOfflinePackage.payload.audio.language,
-                    style: null,
-                    description: "Offline narration",
-                    is_premium: false,
-                  },
-                ]
-              : [],
-          );
           setNarrationMessage(cachedOfflinePackage.payload.audio ? null : "Offline reading loaded. Audio is best-effort.");
           setCurrentIndex(0);
           setSavedProgress(null);
@@ -495,48 +460,21 @@ function ReaderPageContent() {
     if (!narratedStoriesEnabled) {
       setNarration(null);
       setNarrationMessage(null);
-      setAvailableVoices([]);
       return;
     }
 
     const authToken = isAuthenticated ? token : null;
     async function loadNarrationState() {
       try {
-        const voicesResponse = await apiGet<AvailableVoicesResponse>("/narration/voices", {
+        const response = await apiGet<ReaderNarrationResponse>(`/narration/books/${bookId}`, {
           token: authToken,
-          query: { language: effectiveLanguage, child_profile_id: authenticatedChildProfileId },
+          query: {
+            language: effectiveLanguage,
+            child_profile_id: authenticatedChildProfileId,
+          },
         });
-        setAvailableVoices(voicesResponse.voices);
-
-        const preferredVoiceKey =
-          selectedVoiceKey && voicesResponse.voices.some((voice) => voice.key === selectedVoiceKey)
-            ? selectedVoiceKey
-            : undefined;
-        try {
-          const response = await apiGet<ReaderNarrationResponse>(`/narration/books/${bookId}`, {
-            token: authToken,
-            query: {
-              language: effectiveLanguage,
-              voice_key: preferredVoiceKey,
-              child_profile_id: authenticatedChildProfileId,
-            },
-          });
-          setNarration(response);
-          setSelectedVoiceKey(response.voice.key);
-          setNarrationMessage(null);
-        } catch (err) {
-          if (err instanceof ApiError && err.status === 403 && preferredVoiceKey) {
-            const fallback = await apiGet<ReaderNarrationResponse>(`/narration/books/${bookId}`, {
-              token: authToken,
-              query: { language: effectiveLanguage, child_profile_id: authenticatedChildProfileId },
-            });
-            setNarration(fallback);
-            setSelectedVoiceKey(fallback.voice.key);
-            setNarrationMessage("That voice needs premium access. Switched to an available narration voice.");
-            return;
-          }
-          throw err;
-        }
+        setNarration(response);
+        setNarrationMessage(null);
       } catch (err) {
         if (err instanceof ApiError && err.status === 404) {
           setNarration(null);
@@ -554,7 +492,7 @@ function ReaderPageContent() {
     }
 
     void loadNarrationState();
-  }, [authLoading, bookId, effectiveLanguage, isAuthenticated, isOnline, narratedStoriesEnabled, selectedChildProfile?.id, selectedVoiceKey, token, usingOfflinePackage]);
+  }, [authLoading, bookId, effectiveLanguage, isAuthenticated, isOnline, narratedStoriesEnabled, selectedChildProfile?.id, token, usingOfflinePackage]);
 
   useEffect(() => {
     if (!bookId || !isOnline) {
@@ -1339,6 +1277,29 @@ function ReaderPageContent() {
                 <div className={index === currentIndex ? "rounded-[2.25rem] ring-2 ring-indigo-200/80 ring-offset-2 ring-offset-transparent" : ""}>
                   <ReaderPageView book={book} page={page} />
                 </div>
+                {narratedStoriesEnabled && narration && page.page_number === 0 ? (
+                  <StoryAudioPlayer
+                    bookId={book.book_id}
+                    narration={narration}
+                    currentPageNumber={currentPage.page_number}
+                    onPageChange={(pageNumber, options) => {
+                      const matchedIndex = visiblePages.findIndex((visiblePage) => visiblePage.page_number === pageNumber);
+                      if (matchedIndex >= 0) {
+                        scrollToPageIndex(matchedIndex, options?.behavior ?? "smooth");
+                      }
+                    }}
+                    token={token}
+                    user={user}
+                    language={effectiveLanguage}
+                    childProfileId={selectedChildProfile?.id}
+                    resolvedControls={resolvedControls}
+                  />
+                ) : null}
+                {narratedStoriesEnabled && !narration && narrationMessage && page.page_number === 0 ? (
+                  <section className="rounded-[2rem] border border-dashed border-slate-300 bg-white/75 p-4 text-sm text-slate-600">
+                    {narrationMessage}
+                  </section>
+                ) : null}
                 {isPreviewMode &&
                 isEditor &&
                 page.page_number > 0 &&
@@ -1368,41 +1329,6 @@ function ReaderPageContent() {
           </div>
         )}
       </section>
-
-      {narratedStoriesEnabled ? (
-        narration ? (
-          <StoryAudioPlayer
-            bookId={book.book_id}
-            narration={narration}
-            voices={availableVoices}
-            currentPageNumber={currentPage.page_number}
-            onPageChange={(pageNumber, options) => {
-              const matchedIndex = visiblePages.findIndex((page) => page.page_number === pageNumber);
-              if (matchedIndex >= 0) {
-                scrollToPageIndex(matchedIndex, options?.behavior ?? "smooth");
-              }
-            }}
-            onVoiceChange={(voiceKey) => {
-              setSelectedVoiceKey(voiceKey);
-              void trackVoiceSelected(book.book_id, voiceKey, {
-                token: isAuthenticated ? token : null,
-                user,
-                language: effectiveLanguage,
-                childProfileId: selectedChildProfile?.id,
-              });
-            }}
-            token={token}
-            user={user}
-            language={effectiveLanguage}
-            childProfileId={selectedChildProfile?.id}
-            resolvedControls={resolvedControls}
-          />
-        ) : (
-          <section className="rounded-[2rem] border border-dashed border-slate-300 bg-white/70 p-4 text-sm text-slate-600">
-            {narrationMessage || "Narrated version coming soon."}
-          </section>
-        )
-      ) : null}
 
       <section className="space-y-4 rounded-[2rem] border border-white/70 bg-white/85 p-5 shadow-sm">
         <div>
