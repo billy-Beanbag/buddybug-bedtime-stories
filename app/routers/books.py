@@ -21,6 +21,7 @@ from app.services.book_builder import (
     validate_story_pages_ready_for_release,
     validate_publication_status,
 )
+from app.services.narration_service import auto_generate_default_narration_for_book
 from app.services.review_service import utc_now
 from app.utils.dependencies import get_current_admin_user, get_current_editor_user
 
@@ -272,6 +273,7 @@ def publish_book(
         request_id=get_request_id_from_request(request),
         metadata={"publication_status": updated_book.publication_status},
     )
+    auto_generate_default_narration_for_book(session, book=updated_book, replace_existing=False)
     return updated_book
 
 
