@@ -75,6 +75,7 @@ def ensure_child_name_narration_asset(
         language=normalized_language,
         snippet_type=f"{snippet_key}-{name_key}",
         cache_key=cache_hash,
+        provider="mock" if guessed_extension == "wav" else "generated",
         extension=guessed_extension,
     )
     local_path = get_local_asset_path(precomputed_path)
@@ -99,6 +100,7 @@ def ensure_child_name_narration_asset(
             language=normalized_language,
             snippet_type=f"{snippet_key}-{name_key}",
             cache_key=cache_hash,
+            provider=result.provider,
             extension=result.file_extension,
         ),
         result.audio_bytes,

@@ -146,6 +146,7 @@ def build_mock_narration_segment_path(
         language=language,
         narration_id=narration_id,
         page_number=page_number,
+        provider="mock",
         extension="wav",
     )
 
@@ -157,11 +158,13 @@ def build_narration_segment_path(
     language: str,
     narration_id: int,
     page_number: int,
+    provider: str = "generated",
     extension: str = "mp3",
 ) -> str:
     cleaned_extension = extension.strip().lstrip(".") or "mp3"
+    asset_root = "mock-assets" if provider.strip().lower() == "mock" else "generated-assets"
     return (
-        f"mock-assets/narration/book-{book_id}/{language}/{voice_key}/"
+        f"{asset_root}/narration/book-{book_id}/{language}/{voice_key}/"
         f"narration-{narration_id}-page-{page_number}.{cleaned_extension}"
     )
 
@@ -173,11 +176,13 @@ def build_child_name_audio_path(
     language: str,
     snippet_type: str,
     cache_key: str,
+    provider: str = "generated",
     extension: str = "mp3",
 ) -> str:
     cleaned_extension = extension.strip().lstrip(".") or "mp3"
+    asset_root = "mock-assets" if provider.strip().lower() == "mock" else "generated-assets"
     return (
-        f"mock-assets/narration/names/child-{child_profile_id}/{language}/{voice_key}/"
+        f"{asset_root}/narration/names/child-{child_profile_id}/{language}/{voice_key}/"
         f"{snippet_type}-{cache_key}.{cleaned_extension}"
     )
 

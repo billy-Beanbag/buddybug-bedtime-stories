@@ -171,6 +171,7 @@ def create_narration_segments(
                 language=language,
                 narration_id=narration.id,
                 page_number=page.page_number,
+                provider=result.provider,
                 extension=result.file_extension,
             ),
             result.audio_bytes,
