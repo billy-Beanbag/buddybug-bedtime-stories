@@ -246,16 +246,16 @@ def _premise_for_hook(
     if hook_type == "tiny_creature_problem":
         return f"{pair} find {_creature_for_setting(setting)} beside the wrong thing and have to help it gently."
     if hook_type == "misunderstanding":
-        return f"{pair} notice {_clue_for_setting(setting)} and make different guesses about what it means."
+        return f"{pair} both notice {_clue_for_setting(setting)}, but each of them becomes certain it means something completely different."
     if hook_type == "helpful_plan_goes_wrong":
         return f"{lead} tries to help by {_plan_task_for_setting(setting)}, but the sensible plan turns into a wobbling muddle."
     if hook_type == "silly_competition":
-        return f"{pair} get distracted by { _competition_for_setting(setting) } and turn a tiny contest into a funny problem."
+        return f"{pair} get distracted by {_competition_for_setting(setting)} and let the contest become far bigger, sillier, and harder to stop than they meant."
     if hook_type == "unexpected_discovery":
-        return f"{pair} notice {_clue_for_setting(setting)} in the {setting} and decide they must find out what happened."
+        return f"In the {setting}, {pair} notice {_clue_for_setting(setting)} and cannot resist following it to see where the strange little trail leads."
     if hook_type == "pretend_game":
-        return f"{pair} get carried away with a pretend game in the {setting} until it causes a real little problem."
-    return f"{pair} notice that one small part of the {setting} is not quite right and decide to sort it out together."
+        return f"{pair} become so absorbed in a pretend game in the {setting} that one make-believe idea starts affecting the real world around them."
+    return f"In the {setting}, {pair} notice one very specific thing that should not be where it is, and following that oddity leads them into a gentle, satisfying little story."
 
 
 def _title_for_hook(hook_type: str, main_characters: list[str], setting: str) -> str:
@@ -276,10 +276,10 @@ def _title_for_hook(hook_type: str, main_characters: list[str], setting: str) ->
     if hook_type == "silly_competition":
         return f"{lead} and {second}'s Puddle Contest" if "puddle" in setting.casefold() else f"{lead} and {second}'s Silly Contest"
     if hook_type == "unexpected_discovery":
-        return f"{lead} and the Strange Find"
+        return f"{lead} and the Curious Trail"
     if hook_type == "pretend_game":
-        return f"{lead} and {second}'s Pretend-Day Problem"
-    return f"{lead} and the Gentle Problem"
+        return f"{lead} and {second}'s Pretend-Day Mix-Up"
+    return f"{lead} and the Curious Mix-Up"
 
 
 def _normalize_premise_key(premise: str) -> str:

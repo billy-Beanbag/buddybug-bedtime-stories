@@ -49,6 +49,29 @@ VOICE_SEED_DATA = [
         "is_active": True,
         "tone_style": "calm, warm, clear",
     },
+    {
+        "key": "gentle_mother_fr",
+        "display_name": "Gentle Mother FR",
+        "language": "fr",
+        "gender": "female",
+        "style": "gentle",
+        "description": "Warm French bedtime narration.",
+        "is_premium": False,
+        "is_active": True,
+        "gender_style": "feminine",
+        "tone_style": "gentle, nurturing, calm",
+    },
+    {
+        "key": "calm_storyteller_fr",
+        "display_name": "Calm Storyteller FR",
+        "language": "fr",
+        "gender": "neutral",
+        "style": "calm",
+        "description": "Balanced French storybook narration for calm family listening.",
+        "is_premium": False,
+        "is_active": True,
+        "tone_style": "calm, warm, clear",
+    },
 ]
 
 

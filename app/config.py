@@ -1,3 +1,4 @@
+import json
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -20,6 +21,16 @@ def _get_int_env(name: str, default: int) -> int:
     if raw_value is None or not raw_value.strip():
         return default
     return int(raw_value)
+
+
+def _get_json_env(name: str) -> dict[str, object]:
+    raw_value = os.getenv(name)
+    if raw_value is None or not raw_value.strip():
+        return {}
+    parsed = json.loads(raw_value)
+    if not isinstance(parsed, dict):
+        raise ValueError(f"{name} must contain a JSON object")
+    return parsed
 
 
 def _normalize_cors_origin(value: str) -> str:
@@ -93,6 +104,17 @@ class Settings:
     illustration_generation_base_url: str
     illustration_generation_timeout_seconds: int
     illustration_generation_debug: bool
+    narration_tts_provider: str
+    narration_tts_require_live: bool
+    narration_tts_timeout_seconds: int
+    narration_auto_generate_on_publish: bool
+    narration_default_voice_by_language: dict[str, object]
+    elevenlabs_api_key: str
+    elevenlabs_base_url: str
+    elevenlabs_model_id: str
+    elevenlabs_output_format: str
+    elevenlabs_voice_ids_by_key: dict[str, object]
+    elevenlabs_voice_settings_by_key: dict[str, object]
 
 
 def get_settings() -> Settings:
@@ -151,6 +173,17 @@ def get_settings() -> Settings:
         illustration_generation_base_url=os.getenv("ILLUSTRATION_GENERATION_BASE_URL", "https://api.openai.com/v1"),
         illustration_generation_timeout_seconds=_get_int_env("ILLUSTRATION_GENERATION_TIMEOUT_SECONDS", 60),
         illustration_generation_debug=_get_bool_env("ILLUSTRATION_GENERATION_DEBUG", False),
+        narration_tts_provider=os.getenv("NARRATION_TTS_PROVIDER", "auto").strip().lower(),
+        narration_tts_require_live=_get_bool_env("NARRATION_TTS_REQUIRE_LIVE", False),
+        narration_tts_timeout_seconds=_get_int_env("NARRATION_TTS_TIMEOUT_SECONDS", 90),
+        narration_auto_generate_on_publish=_get_bool_env("NARRATION_AUTO_GENERATE_ON_PUBLISH", True),
+        narration_default_voice_by_language=_get_json_env("NARRATION_DEFAULT_VOICE_BY_LANGUAGE_JSON"),
+        elevenlabs_api_key=os.getenv("ELEVENLABS_API_KEY", ""),
+        elevenlabs_base_url=os.getenv("ELEVENLABS_BASE_URL", "https://api.elevenlabs.io/v1"),
+        elevenlabs_model_id=os.getenv("ELEVENLABS_MODEL_ID", "eleven_multilingual_v2"),
+        elevenlabs_output_format=os.getenv("ELEVENLABS_OUTPUT_FORMAT", "mp3_44100_128"),
+        elevenlabs_voice_ids_by_key=_get_json_env("ELEVENLABS_VOICE_IDS_JSON"),
+        elevenlabs_voice_settings_by_key=_get_json_env("ELEVENLABS_VOICE_SETTINGS_JSON"),
     )
 
 
@@ -198,3 +231,14 @@ ILLUSTRATION_GENERATION_MODEL = settings.illustration_generation_model
 ILLUSTRATION_GENERATION_BASE_URL = settings.illustration_generation_base_url
 ILLUSTRATION_GENERATION_TIMEOUT_SECONDS = settings.illustration_generation_timeout_seconds
 ILLUSTRATION_GENERATION_DEBUG = settings.illustration_generation_debug
+NARRATION_TTS_PROVIDER = settings.narration_tts_provider
+NARRATION_TTS_REQUIRE_LIVE = settings.narration_tts_require_live
+NARRATION_TTS_TIMEOUT_SECONDS = settings.narration_tts_timeout_seconds
+NARRATION_AUTO_GENERATE_ON_PUBLISH = settings.narration_auto_generate_on_publish
+NARRATION_DEFAULT_VOICE_BY_LANGUAGE = settings.narration_default_voice_by_language
+ELEVENLABS_API_KEY = settings.elevenlabs_api_key
+ELEVENLABS_BASE_URL = settings.elevenlabs_base_url
+ELEVENLABS_MODEL_ID = settings.elevenlabs_model_id
+ELEVENLABS_OUTPUT_FORMAT = settings.elevenlabs_output_format
+ELEVENLABS_VOICE_IDS_BY_KEY = settings.elevenlabs_voice_ids_by_key
+ELEVENLABS_VOICE_SETTINGS_BY_KEY = settings.elevenlabs_voice_settings_by_key

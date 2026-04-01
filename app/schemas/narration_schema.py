@@ -11,6 +11,7 @@ class NarrationVoiceRead(BaseModel):
     style: str | None = None
     description: str | None = None
     is_premium: bool
+    is_active: bool = True
 
 
 class BookNarrationRead(BaseModel):
@@ -41,9 +42,52 @@ class NarrationGenerateRequest(BaseModel):
     replace_existing: bool = False
 
 
+class NarrationGenerateDefaultRequest(BaseModel):
+    book_id: int
+    language: str
+    replace_existing: bool = False
+
+
 class NarrationGenerateResponse(BaseModel):
     narration: BookNarrationRead
     segments: list[NarrationSegmentRead]
+
+
+class NarrationBackfillRequest(BaseModel):
+    book_ids: list[int] | None = None
+    replace_existing: bool = False
+
+
+class NarrationBackfillItem(BaseModel):
+    book_id: int
+    voice_key: str
+    language: str
+    narration_id: int
+
+
+class NarrationBackfillResponse(BaseModel):
+    items: list[NarrationBackfillItem]
+
+
+class ChildNameNarrationGenerateRequest(BaseModel):
+    child_profile_id: int
+    voice_key: str
+    language: str
+    source_text: str | None = None
+    snippet_type: str = "name_only"
+    replace_existing: bool = False
+
+
+class ChildNameNarrationAssetRead(BaseModel):
+    child_profile_id: int
+    voice_key: str
+    language: str
+    source_text: str
+    snippet_type: str
+    audio_url: str
+    duration_seconds: int | None = None
+    provider: str
+    cached: bool
 
 
 class ReaderNarrationResponse(BaseModel):

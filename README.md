@@ -34,6 +34,14 @@ Important variables:
   - `STORY_GENERATION_CANDIDATE_COUNT`
   - `STORY_GENERATION_DEBUG`
   - `STORY_GENERATION_REQUIRE_LIVE`
+- narration settings when enabling live ElevenLabs audio:
+  - `NARRATION_TTS_PROVIDER`
+  - `NARRATION_TTS_REQUIRE_LIVE`
+  - `NARRATION_AUTO_GENERATE_ON_PUBLISH`
+  - `NARRATION_DEFAULT_VOICE_BY_LANGUAGE_JSON`
+  - `ELEVENLABS_API_KEY`
+  - `ELEVENLABS_VOICE_IDS_JSON`
+  - `ELEVENLABS_VOICE_SETTINGS_JSON`
 
 ## Backend Local Run
 
@@ -212,6 +220,27 @@ Important:
 - without `STORY_GENERATION_API_KEY` and `STORY_GENERATION_MODEL`, the app will stay on the fallback path
 - the fallback path now intentionally flags drafts as `needs_revision`
 - that is expected behavior until live story generation is configured
+
+## ElevenLabs Narration Setup
+
+Buddybug can now generate narration through ElevenLabs and automatically create default audio when a book is published.
+
+Minimum setup:
+
+1. Copy `.env.example` to `.env` if you have not already.
+2. Set `NARRATION_TTS_PROVIDER=elevenlabs` for strict live mode, or leave `auto` to fall back to local mock audio when a voice is missing.
+3. Set `ELEVENLABS_API_KEY`.
+4. Set `NARRATION_DEFAULT_VOICE_BY_LANGUAGE_JSON`, for example `{"en":"gentle_mother_en","es":"calm_storyteller_es","fr":"gentle_mother_fr"}`.
+5. Set `ELEVENLABS_VOICE_IDS_JSON` to map Buddybug voice keys to ElevenLabs voice IDs.
+6. Optionally set `ELEVENLABS_VOICE_SETTINGS_JSON` for per-voice stability and similarity tuning.
+7. Leave `NARRATION_AUTO_GENERATE_ON_PUBLISH=true` to generate audio during publishing.
+
+Notes:
+
+- narration is generated from localized reader pages, so a child profile language should point to a language where the book text is actually available
+- if a translation is missing, the reader falls back to the source-language text, so do not wire a foreign-language voice for that book until the translation is published
+- admin can backfill older books through `POST /admin/narration/backfill-defaults`
+- reusable child-name snippets can be warmed through `POST /admin/narration/name-assets/generate`
 
 What they do:
 

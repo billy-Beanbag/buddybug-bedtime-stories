@@ -44,7 +44,7 @@ def _normalize_hook(hook: str | None, *, mode: str) -> str:
     for a in allowed:
         if a == lowered:
             return a
-    return "gentle_problem" if mode == BEDTIME_MODE else "unexpected_discovery"
+    return "unexpected_discovery"
 
 
 def _split_characters(raw: str | None, *, allowed: set[str]) -> list[str]:
@@ -85,6 +85,9 @@ def _build_user_prompt(
             f"Tone to reflect in theme/feeling fields: {resolved_tone}.",
             f"Freshness batch token: {batch_nonce}. This batch must feel different from prior batches.",
             "",
+            "The strongest ideas should feel like real little children's stories, not abstract editorial placeholders.",
+            "Each premise must suggest a specific first scene, a recognisable child situation, and a satisfying direction the story could take.",
+            "",
             "Character canon (do not change species or roles):",
             "- Verity: warm human mother figure.",
             "- Dolly: gentle grey dachshund, blue collar.",
@@ -95,16 +98,24 @@ def _build_user_prompt(
             f"Each idea's hook_type MUST be one of exactly: {', '.join(allowed_hooks)}.",
             "",
             "Rules:",
-            "- Premise = ONE vivid sentence a writer could expand (specific problem or comic situation).",
+            "- Premise = ONE or TWO vivid sentences a writer could expand immediately into a real story scene.",
+            "- Prefer real-world child situations: losing track of something meaningful, misunderstanding what was seen, a plan becoming unexpectedly funny, an odd discovery, a bedtime ritual taking an unexpected turn, a pet or tiny creature behaviour that starts a story, a game or promise that changes shape, or a small emotional/social moment children actually recognise.",
+            "- The premise should sound like something a parent could read and instantly picture as a genuine story, not a template.",
+            "- Do not write generic placeholders such as 'something is not quite right', 'a small problem appears', 'they decide to fix it', 'a funny problem to solve', or 'a clue in the wrong place' unless the concrete thing is named and vivid.",
+            "- The opening image should be concrete: what is seen, found, heard, hidden, misplaced, mistaken, promised, followed, borrowed, discovered, or interrupted?",
+            "- Avoid meaningless conflict. The story should move because something specific is happening, not because the premise says there is a problem.",
             "- Titles short (under 60 chars), no colon subtitles.",
-            "- No duplicate premises; vary settings and problems across the batch.",
+            "- No duplicate premises; vary settings, story movement, and emotional payoffs across the batch.",
             "- Do not mention 'AI', 'story idea', or meta writing language.",
     ]
     if mode == BEDTIME_MODE:
         lines.extend(
             [
-                "- Bedtime ideas should still feel engaging and plot-led, with a concrete problem or mystery and one playful or surprising beat in the middle.",
-                "- Bedtime ideas should end in a sleepy, reassuring, clearly settled conclusion after the problem is solved.",
+                "- Bedtime ideas should feel calm but real: curiosity, ritual, misread signs, finding, noticing, helping, following, hiding, borrowing, waiting, wondering, or gently putting something right are all welcome.",
+                "- Bedtime does not have to mean a repair job. It can begin with a discovery, question, promise, search, or strange little observation.",
+                "- Bedtime ideas should still include one playful, funny, or surprising middle turn before landing in a sleepy, reassuring, clearly settled conclusion.",
+                "- Prefer hook types like unexpected_discovery, misunderstanding, tiny_creature_problem, or missing_item unless another hook is truly more vivid.",
+                "- Use gentle_problem only when the premise is still highly specific and visual, not vague.",
             ]
         )
     else:
@@ -113,6 +124,7 @@ def _build_user_prompt(
                 "- Adventure ideas must not end with going to bed, falling asleep, bedtime routine beats, or sleepy goodnight framing.",
                 "- Adventure ideas should feel witty, cheeky, and engaging enough for an afternoon read, with a stronger comic or mischievous turn than bedtime stories.",
                 "- Aim for a warm but alert ending: proud, relieved, excited, curious, or cheerfully satisfied.",
+                "- Adventure ideas should begin with a concrete lively situation, not a generic statement that a problem exists.",
             ]
         )
     if exclude_premise_lines:
@@ -135,6 +147,12 @@ def _build_user_prompt(
         )
     lines.extend(
         [
+            "",
+            "Examples of the level of specificity wanted:",
+            "- GOOD: \"Daphne hides her gold star tag for safekeeping during a pirate game and then cannot remember which of her six 'treasure caves' she chose.\"",
+            '- GOOD: "Buddybug notices that every snail in the garden is somehow heading toward the same flowerpot, and Dolly becomes certain they know something important."',
+            '- BAD: "Something in the bedroom is not quite right, so the friends try to fix it."',
+            '- BAD: "A clue appears in the wrong place and causes a little problem."',
             "",
             'Return ONLY valid JSON with this shape (no markdown outside the JSON):',
             '{"ideas":[{"title":"...","premise":"...","hook_type":"missing_item",'

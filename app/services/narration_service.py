@@ -1,17 +1,22 @@
 from __future__ import annotations
 
+import logging
+
 from fastapi import HTTPException, status
 from sqlmodel import Session, desc, select
 
+from app.config import NARRATION_AUTO_GENERATE_ON_PUBLISH, NARRATION_DEFAULT_VOICE_BY_LANGUAGE
 from app.models import Book, BookNarration, NarrationSegment, NarrationVoice, User
 from app.schemas.narration_schema import ReaderNarrationResponse
 from app.services.i18n_service import get_localized_reader_pages, normalize_language
 from app.services.parental_controls_service import filter_voices_by_parental_controls, resolve_parental_controls
 from app.services.reader_service import get_published_book_or_404
 from app.services.review_service import utc_now
-from app.services.storage_service import build_mock_narration_segment_path, get_asset_url, save_bytes
+from app.services.storage_service import build_narration_segment_path, get_asset_url, save_bytes
 from app.services.subscription_service import has_premium_access
-from app.services.tts_adapter import LocalMockTTSAdapter, estimate_tts_duration_seconds
+from app.services.tts_adapter import ConfigurableTTSAdapter, build_tts_adapter
+
+logger = logging.getLogger(__name__)
 
 
 def list_available_voices(
@@ -101,15 +106,39 @@ def _deactivate_matching_narrations(
     session.commit()
 
 
+def get_default_voice_for_language(session: Session, *, language: str) -> NarrationVoice:
+    normalized_language = normalize_language(language)
+    preferred_key = str(NARRATION_DEFAULT_VOICE_BY_LANGUAGE.get(normalized_language, "")).strip()
+    if preferred_key:
+        voice = session.exec(
+            select(NarrationVoice).where(
+                NarrationVoice.key == preferred_key,
+                NarrationVoice.language == normalized_language,
+                NarrationVoice.is_active.is_(True),
+            )
+        ).first()
+        if voice is not None:
+            return voice
+
+    statement = (
+        select(NarrationVoice)
+        .where(NarrationVoice.language == normalized_language, NarrationVoice.is_active.is_(True))
+        .order_by(NarrationVoice.is_premium.asc(), NarrationVoice.display_name.asc())
+    )
+    voice = session.exec(statement).first()
+    if voice is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No narration voice configured for this language")
+    return voice
+
+
 def generate_page_audio(
     *,
-    adapter: LocalMockTTSAdapter,
+    adapter: ConfigurableTTSAdapter,
     text: str,
-    voice_key: str,
+    voice: NarrationVoice,
     language: str,
-) -> tuple[bytes, int]:
-    audio_bytes = adapter.generate_speech(text=text, voice_key=voice_key, language=language)
-    return audio_bytes, estimate_tts_duration_seconds(text)
+):
+    return adapter.generate_speech(text=text, voice=voice, language=language)
 
 
 def create_narration_segments(
@@ -118,7 +147,7 @@ def create_narration_segments(
     narration: BookNarration,
     voice: NarrationVoice,
     language: str,
-    adapter: LocalMockTTSAdapter,
+    adapter: ConfigurableTTSAdapter,
 ) -> list[NarrationSegment]:
     pages, _resolved_language = get_localized_reader_pages(
         session,
@@ -129,27 +158,28 @@ def create_narration_segments(
     )
     segments: list[NarrationSegment] = []
     for page in pages:
-        audio_bytes, duration_seconds = generate_page_audio(
+        result = generate_page_audio(
             adapter=adapter,
             text=page.text_content,
-            voice_key=voice.key,
+            voice=voice,
             language=language,
         )
         asset_path = save_bytes(
-            build_mock_narration_segment_path(
+            build_narration_segment_path(
                 book_id=narration.book_id,
                 voice_key=voice.key,
                 language=language,
                 narration_id=narration.id,
                 page_number=page.page_number,
+                extension=result.file_extension,
             ),
-            audio_bytes,
+            result.audio_bytes,
         )
         segment = NarrationSegment(
             narration_id=narration.id,
             page_number=page.page_number,
             audio_url=get_asset_url(asset_path),
-            duration_seconds=duration_seconds,
+            duration_seconds=result.duration_seconds,
         )
         session.add(segment)
         session.commit()
@@ -202,7 +232,7 @@ def generate_book_narration(
     session.commit()
     session.refresh(narration)
 
-    adapter = LocalMockTTSAdapter()
+    adapter = build_tts_adapter()
     segments = create_narration_segments(
         session,
         narration=narration,
@@ -219,6 +249,82 @@ def generate_book_narration(
     session.commit()
     session.refresh(narration)
     return narration, segments, voice
+
+
+def generate_default_book_narration(
+    session: Session,
+    *,
+    book_id: int,
+    language: str | None = None,
+    replace_existing: bool = False,
+    actor_user: User | None = None,
+) -> tuple[BookNarration, list[NarrationSegment], NarrationVoice]:
+    book = _book_or_404(session, book_id)
+    normalized_language = normalize_language(language or book.language)
+    voice = get_default_voice_for_language(session, language=normalized_language)
+    return generate_book_narration(
+        session,
+        book_id=book.id,
+        voice_key=voice.key,
+        language=normalized_language,
+        replace_existing=replace_existing,
+        actor_user=actor_user,
+    )
+
+
+def auto_generate_default_narration_for_book(
+    session: Session,
+    *,
+    book: Book,
+    replace_existing: bool = False,
+) -> BookNarration | None:
+    if not NARRATION_AUTO_GENERATE_ON_PUBLISH:
+        return None
+    try:
+        narration, _segments, voice = generate_default_book_narration(
+            session,
+            book_id=book.id,
+            language=book.language,
+            replace_existing=replace_existing,
+            actor_user=None,
+        )
+        logger.info(
+            "Auto-generated narration for book %s using voice %s in %s",
+            book.id,
+            voice.key,
+            book.language,
+        )
+        return narration
+    except HTTPException as exc:
+        logger.warning(
+            "Skipped automatic narration for book %s: %s",
+            book.id,
+            exc.detail,
+        )
+        return None
+
+
+def backfill_default_narrations(
+    session: Session,
+    *,
+    book_ids: list[int] | None = None,
+    replace_existing: bool = False,
+) -> list[tuple[BookNarration, NarrationVoice]]:
+    statement = select(Book).where(Book.publication_status.in_(("ready", "published")))
+    if book_ids:
+        statement = statement.where(Book.id.in_(book_ids))
+    books = list(session.exec(statement.order_by(Book.id.asc())).all())
+    generated: list[tuple[BookNarration, NarrationVoice]] = []
+    for book in books:
+        narration, _segments, voice = generate_default_book_narration(
+            session,
+            book_id=book.id,
+            language=book.language,
+            replace_existing=replace_existing,
+            actor_user=None,
+        )
+        generated.append((narration, voice))
+    return generated
 
 
 def _accessible_narration_candidates(

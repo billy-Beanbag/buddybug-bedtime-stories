@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from fastapi import HTTPException, status
 from sqlmodel import Session, select
 
@@ -9,8 +11,11 @@ from app.services.child_profile_service import SUPPORTED_CHILD_AGE_BANDS
 from app.services.content_version_service import snapshot_story_draft, snapshot_story_page
 from app.services.content_lane_service import validate_content_lane_key
 from app.services.i18n_service import validate_language_code
+from app.services.narration_service import auto_generate_default_narration_for_book
 from app.services.quality_service import run_story_draft_quality_checks, run_story_pages_quality_checks
 from app.services.review_service import utc_now, validate_review_status
+
+logger = logging.getLogger(__name__)
 
 EDITORIAL_PROJECT_STATUSES = {
     "draft",
@@ -20,7 +25,7 @@ EDITORIAL_PROJECT_STATUSES = {
     "published",
     "archived",
 }
-EDITORIAL_SOURCE_TYPES = {"ai_generated", "manual", "mixed"}
+EDITORIAL_SOURCE_TYPES = {"ai_generated", "curated_premise", "llm_generated_idea", "manual", "mixed"}
 EDITORIAL_ASSET_TYPES = {"cover_image", "page_image", "manuscript_file", "reference_image"}
 
 
@@ -651,6 +656,9 @@ def publish_project(session: Session, *, project: EditorialProject) -> tuple[Edi
     session.commit()
     session.refresh(project)
     session.refresh(book)
+    auto_generated_narration = auto_generate_default_narration_for_book(session, book=book, replace_existing=False)
+    if auto_generated_narration is not None:
+        logger.info("Generated narration %s during publish flow for book %s", auto_generated_narration.id, book.id)
     return project, book
 
 

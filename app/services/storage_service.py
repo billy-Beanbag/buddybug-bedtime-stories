@@ -140,9 +140,45 @@ def build_mock_narration_segment_path(
     narration_id: int,
     page_number: int,
 ) -> str:
+    return build_narration_segment_path(
+        book_id=book_id,
+        voice_key=voice_key,
+        language=language,
+        narration_id=narration_id,
+        page_number=page_number,
+        extension="wav",
+    )
+
+
+def build_narration_segment_path(
+    *,
+    book_id: int,
+    voice_key: str,
+    language: str,
+    narration_id: int,
+    page_number: int,
+    extension: str = "mp3",
+) -> str:
+    cleaned_extension = extension.strip().lstrip(".") or "mp3"
     return (
         f"mock-assets/narration/book-{book_id}/{language}/{voice_key}/"
-        f"narration-{narration_id}-page-{page_number}.wav"
+        f"narration-{narration_id}-page-{page_number}.{cleaned_extension}"
+    )
+
+
+def build_child_name_audio_path(
+    *,
+    child_profile_id: int,
+    voice_key: str,
+    language: str,
+    snippet_type: str,
+    cache_key: str,
+    extension: str = "mp3",
+) -> str:
+    cleaned_extension = extension.strip().lstrip(".") or "mp3"
+    return (
+        f"mock-assets/narration/names/child-{child_profile_id}/{language}/{voice_key}/"
+        f"{snippet_type}-{cache_key}.{cleaned_extension}"
     )
 
 

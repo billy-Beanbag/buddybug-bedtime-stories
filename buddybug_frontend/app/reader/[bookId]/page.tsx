@@ -1376,10 +1376,10 @@ function ReaderPageContent() {
             narration={narration}
             voices={availableVoices}
             currentPageNumber={currentPage.page_number}
-            onPageChange={(pageNumber) => {
+            onPageChange={(pageNumber, options) => {
               const matchedIndex = visiblePages.findIndex((page) => page.page_number === pageNumber);
               if (matchedIndex >= 0) {
-                scrollToPageIndex(matchedIndex);
+                scrollToPageIndex(matchedIndex, options?.behavior ?? "smooth");
               }
             }}
             onVoiceChange={(voiceKey) => {

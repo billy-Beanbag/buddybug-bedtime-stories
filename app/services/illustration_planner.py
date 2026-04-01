@@ -32,12 +32,14 @@ STYLE_SUFFIX = (
 LOCATION_KEYWORDS = {
     "moonlit garden": ["garden", "petal", "moonlight", "grass", "flowers", "glow in the grass"],
     "cozy bedroom": ["bed", "blanket", "pillows", "bedroom", "room", "lantern", "nightgown"],
+    "breakfast kitchen": ["kitchen", "mix", "mixing bowl", "bowl", "flour", "oven", "bake", "baking", "muffin", "bread", "blueberries", "wooden spoon", "table"],
     "quiet forest": ["forest", "trees", "leaves", "branch", "path through the woods"],
     "storybook clearing": ["clearing", "storybook", "open glade"],
     "sleepy meadow": ["meadow", "tall grass", "field"],
     "nighttime path": ["path", "pathway", "trail", "walk"],
     "by the window": ["window", "windowsill"],
     "inside the house": ["house", "hall", "doorway", "hearth"],
+    "reading nook": ["reading nook", "bookshelf", "stacked books", "cushions", "soft rug", "book basket"],
 }
 
 MOOD_KEYWORDS = {
@@ -55,6 +57,11 @@ OBJECT_KEYWORDS = {
     "storybook": ["book", "storybook", "pages"],
     "blanket": ["blanket", "quilt", "coverlet"],
     "basket": ["basket", "woven basket", "basket bed"],
+    "mixing bowl": ["mixing bowl", "bowl of batter", "bowl"],
+    "wooden spoon": ["wooden spoon", "spoon"],
+    "blueberries": ["blueberries", "berry", "berries"],
+    "flour": ["flour", "flour dust", "batter"],
+    "oven": ["oven", "baking tray", "tray of muffins", "muffins", "bread"],
     "pond": ["pond", "ripples", "lily pads", "water"],
     "flowers": ["flowers", "petals", "daisies", "garden"],
     "window": ["window", "curtains", "glass"],
@@ -62,6 +69,31 @@ OBJECT_KEYWORDS = {
     "moon": ["moon", "crescent moon", "stars"],
     "tree": ["tree", "apple tree", "story tree"],
     "path": ["path", "trail", "glowing path"],
+}
+
+LOCATION_REQUIRED_PROPS = {
+    "breakfast kitchen": ("mixing bowl", "wooden spoon", "kitchen table or worktop", "baking ingredients"),
+    "cozy bedroom": ("bed", "pillows", "blanket", "bedside or bedroom furniture"),
+    "reading nook": ("stacked books", "soft rug", "cushions", "low shelf or book basket"),
+    "moonlit garden": ("flowers", "garden greenery", "path or open grass"),
+    "garden path": ("path stones", "flowers", "garden leaves"),
+}
+
+LOCATION_NEGATIVE_ELEMENTS = {
+    "breakfast kitchen": (
+        "do not place the scene on a bed",
+        "do not show bedroom pillows or blankets as the main setting",
+        "do not use a nursery or bedtime bedroom composition",
+        "do not replace the kitchen with a generic cozy room",
+    ),
+    "cozy bedroom": (
+        "do not turn the scene into a kitchen",
+        "do not use kitchen counters or baking setup unless the text clearly requires it",
+    ),
+    "reading nook": (
+        "do not place the scene on a bed unless the text clearly says so",
+        "do not replace the nook with a kitchen or dining room",
+    ),
 }
 
 VISUAL_ACTION_TERMS = {
@@ -393,6 +425,21 @@ def _location_props(location: str) -> list[str]:
     return list(canon.recurring_props)
 
 
+def _location_required_props(location: str) -> list[str]:
+    canon = get_location_visual_canon(location)
+    configured = LOCATION_REQUIRED_PROPS.get((location or "").strip().casefold(), ())
+    props = list(configured)
+    if canon is not None:
+        for prop in canon.recurring_props:
+            if prop not in props:
+                props.append(prop)
+    return props
+
+
+def _location_negative_elements(location: str) -> list[str]:
+    return list(LOCATION_NEGATIVE_ELEMENTS.get((location or "").strip().casefold(), ()))
+
+
 def _first_matching_object(page_text: str) -> str | None:
     lowered = page_text.casefold()
     for label, keywords in OBJECT_KEYWORDS.items():
@@ -404,6 +451,9 @@ def _first_matching_object(page_text: str) -> str | None:
 def _select_visual_role(*, page_number: int, page_count: int, page_text: str, mood: str, location: str) -> str:
     lowered = page_text.casefold()
     lowered_location = location.casefold()
+    if any(token in lowered_location for token in {"kitchen", "reading nook"}):
+        if any(token in lowered for token in {"mix", "bake", "bowl", "flour", "oven", "spoon", "books", "shelf", "stack"}):
+            return "gentle_pause"
     if page_number == 1:
         return "opening_tableau"
     if page_number == page_count:
@@ -439,12 +489,12 @@ def _pick_anchor_prop(*, page_text: str, location: str, existing: list[str], rol
     lowered_candidates = {candidate.casefold(): candidate for candidate in candidates}
 
     preferred_groups = {
-        "opening_tableau": ("window", "glowing path", "path", "flowers", "lanterns", "books"),
+        "opening_tableau": ("mixing bowl", "wooden spoon", "window", "glowing path", "path", "flowers", "lanterns", "books"),
         "magical_notice": ("glowing path", "window", "moon", "lanterns", "flowers"),
-        "listening_pause": ("flowers", "glowing path", "patchwork blanket", "pillows", "books"),
-        "reassuring_connection": ("patchwork blanket", "pillows", "flowers", "books", "blankets"),
+        "listening_pause": ("mixing bowl", "wooden spoon", "flowers", "glowing path", "patchwork blanket", "pillows", "books"),
+        "reassuring_connection": ("mixing bowl", "wooden spoon", "patchwork blanket", "pillows", "flowers", "books", "blankets"),
         "sleepy_settle": ("patchwork blanket", "blanket", "pillows", "basket bed", "cushions", "books"),
-        "gentle_pause": ("flowers", "window", "path", "books"),
+        "gentle_pause": ("mixing bowl", "wooden spoon", "blueberries", "flour", "books", "flowers", "window", "path"),
     }
     for preferred in preferred_groups.get(role, ()):
         for candidate in candidates:
@@ -500,6 +550,16 @@ def _rewrite_visual_action(
     anchor_prop = _pick_anchor_prop(page_text=page_text, location=location, existing=existing_objects, role=role)
     lowered = page_text.casefold()
 
+    if "kitchen" in location.casefold():
+        if any(token in lowered for token in {"mix", "bowl", "batter", "flour", "muffin", "bread", "oven", "blueberry"}):
+            if others_text:
+                return f"{lead_name} and {others_text} are actively mixing ingredients at the kitchen table beside the {anchor_prop}"
+            return f"{pair_text} are actively mixing ingredients at the kitchen table beside the {anchor_prop}"
+        return f"{full_group_text} stay clearly inside the kitchen beside the {anchor_prop} while the page action unfolds"
+    if "reading nook" in location.casefold():
+        if others_text:
+            return f"{lead_name} and {others_text} are gathered in the reading nook with books and cushions clearly around them"
+        return f"{pair_text} are gathered in the reading nook with books and cushions clearly around them"
     if role == "opening_tableau":
         if "window" in anchor_prop.casefold():
             return f"{lead_name} stands by the {anchor_prop} with {others_text}, looking out toward the moonlit garden"
@@ -555,10 +615,13 @@ def _rewrite_important_objects(
     preferred_prop = _pick_anchor_prop(page_text=page_text, location=location, existing=objects, role=role)
     if preferred_prop not in objects:
         objects.append(preferred_prop)
+    for prop in _location_required_props(location)[:3]:
+        if prop not in objects:
+            objects.append(prop)
     for prop in props[:2]:
         if prop not in objects:
             objects.append(prop)
-    return _dedupe_preserving_order(objects)[:4]
+    return _dedupe_preserving_order(objects)[:6]
 
 
 def _rewrite_composition_note(
@@ -773,6 +836,7 @@ def _illustration_prompt(
         f"Page number: {brief.page_number}",
         f"Exact text: {brief.exact_text}",
         f"Scene location: {brief.scene_location}",
+        f"This scene must be clearly and unmistakably set in {brief.scene_location}.",
         f"Characters present: {present_characters_text}.",
         f"Key action: {brief.key_action}.",
         f"Emotional tone: {brief.emotional_tone}.",
@@ -801,6 +865,12 @@ def _illustration_prompt(
             lines.append(f"Must show: {'; '.join(_dedupe_preserving_order(beat.must_show))}.")
         if beat.continuity_notes:
             lines.append(f"Continuity notes: {' '.join(_dedupe_preserving_order(beat.continuity_notes))}")
+    required_location_props = _location_required_props(brief.scene_location)
+    if required_location_props:
+        lines.append(f"Required setting anchors: {'; '.join(required_location_props)}.")
+    location_negative_lines = _location_negative_elements(brief.scene_location)
+    if location_negative_lines:
+        lines.append(f"Do not relocate this scene: {'; '.join(location_negative_lines)}.")
     location_lines = build_location_visual_lines(brief.scene_location)
     if location_lines:
         lines.append("Location canon:")
@@ -814,6 +884,7 @@ def _illustration_prompt(
         "Show specific readable action with clean composition and child-friendly expressions.",
         "No text, captions, letters, labels, watermarks, or readable writing anywhere inside the artwork.",
     ]
+    negative_lines.extend(location_negative_lines)
     if beat is not None and beat.must_not_show:
         negative_lines.extend(_dedupe_preserving_order(beat.must_not_show))
     lines.append(f"Style: {style_suffix}.")
