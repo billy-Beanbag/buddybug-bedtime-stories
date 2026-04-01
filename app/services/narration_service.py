@@ -215,7 +215,14 @@ def generate_book_narration(
         narration_voice_id=voice.id,
     )
     if existing is not None and not replace_existing:
-        return existing, _list_segments(session, narration_id=existing.id), voice
+        existing_segments = _list_segments(session, narration_id=existing.id)
+        if existing.is_active and existing_segments:
+            if not book.audio_available:
+                book.audio_available = True
+                book.updated_at = utc_now()
+                session.add(book)
+                session.commit()
+            return existing, existing_segments, voice
 
     _deactivate_matching_narrations(
         session,
