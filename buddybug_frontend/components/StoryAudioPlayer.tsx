@@ -145,7 +145,11 @@ export function StoryAudioPlayer({
             resumeDelayMs.current = 0;
             void audioRef.current?.play().catch(() => undefined);
           }}
-          className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:border-indigo-200 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className={`rounded-2xl px-4 py-2.5 text-sm font-semibold transition ${
+            enabled && autoplayAllowed
+              ? "bg-[linear-gradient(135deg,#4338ca_0%,#5b21b6_100%)] text-white shadow-[0_16px_36px_rgba(79,70,229,0.18)]"
+              : "border border-slate-200 bg-white text-slate-900"
+          } disabled:cursor-not-allowed disabled:opacity-50`}
         >
           {isPlaying ? "Pause" : "Play"}
         </button>
@@ -154,7 +158,7 @@ export function StoryAudioPlayer({
       <audio
         ref={audioRef}
         controls={false}
-        autoPlay={Boolean(autoplayAllowed && enabled)}
+        autoPlay={false}
         preload="metadata"
         className="hidden"
         src={resolveApiUrl(currentSegment.audio_url)}
