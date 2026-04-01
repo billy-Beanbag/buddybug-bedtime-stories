@@ -38,6 +38,7 @@ export function StoryAudioPlayer({
   const shouldResumeAfterAdvance = useRef(false);
   const resumeDelayMs = useRef(0);
   const resumeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loadedSegmentUrlRef = useRef("");
   const [enabled, setEnabled] = useState(false);
   const [storyReadsItself, setStoryReadsItself] = useState(false);
   const [segmentIndex, setSegmentIndex] = useState(0);
@@ -93,8 +94,11 @@ export function StoryAudioPlayer({
       clearTimeout(resumeTimeoutRef.current);
       resumeTimeoutRef.current = null;
     }
-    audioRef.current.src = currentSegmentUrl;
-    audioRef.current.load();
+    if (loadedSegmentUrlRef.current !== currentSegmentUrl) {
+      audioRef.current.src = currentSegmentUrl;
+      audioRef.current.load();
+      loadedSegmentUrlRef.current = currentSegmentUrl;
+    }
     if (enabled && shouldResumeAfterAdvance.current && autoplayAllowed) {
       const delayMs = resumeDelayMs.current;
       if (delayMs > 0) {
