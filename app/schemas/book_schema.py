@@ -50,6 +50,12 @@ class BookPageRead(SQLModel):
     updated_at: datetime
 
 
+class BookPageUpdate(SQLModel):
+    text_content: str | None = None
+    image_url: str | None = None
+    layout_type: str | None = None
+
+
 class BookAssemblyRequest(SQLModel):
     story_draft_id: int
     language: str = "en"

@@ -11,6 +11,7 @@ from app.schemas.book_schema import (
     BookCreate,
     BookDetailResponse,
     BookPageRead,
+    BookPageUpdate,
     BookRead,
     BookUpdate,
 )
@@ -135,6 +136,34 @@ def get_book_story_draft_id(
 def get_book_pages(book_id: int, session: Session = Depends(get_session)) -> list[BookPage]:
     get_book_or_404(session, book_id)
     return _get_book_pages(session, book_id)
+
+
+@router.patch(
+    "/{book_id}/pages/{page_number}",
+    response_model=BookPageRead,
+    summary="Partially update one book page",
+)
+def update_book_page(
+    book_id: int,
+    page_number: int,
+    payload: BookPageUpdate,
+    session: Session = Depends(get_session),
+    _: User = Depends(get_current_admin_user),
+) -> BookPage:
+    get_book_or_404(session, book_id)
+    book_page = next((page for page in _get_book_pages(session, book_id) if page.page_number == page_number), None)
+    if book_page is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book page not found")
+
+    update_data = payload.model_dump(exclude_unset=True)
+    for field_name, value in update_data.items():
+        setattr(book_page, field_name, value)
+
+    book_page.updated_at = utc_now()
+    session.add(book_page)
+    session.commit()
+    session.refresh(book_page)
+    return book_page
 
 
 @router.get(
