@@ -947,6 +947,7 @@ export interface StorySuggestionRead {
   id: number;
   user_id: number;
   child_profile_id: number | null;
+  promoted_story_idea_id: number | null;
   title: string | null;
   brief: string;
   desired_outcome: string | null;
@@ -970,6 +971,7 @@ export interface StorySuggestionAdminRead extends StorySuggestionRead {
   user_email: string | null;
   user_display_name: string | null;
   child_profile_name: string | null;
+  promoted_story_idea_title: string | null;
 }
 
 export interface StorySuggestionAdminListResponse {

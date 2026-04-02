@@ -21,6 +21,7 @@ class StorySuggestionRead(StorySuggestionCreate):
 
     id: int
     user_id: int
+    promoted_story_idea_id: int | None = None
     status: str
     approved_as_reference: bool
     editorial_notes: str | None = None
@@ -32,6 +33,7 @@ class StorySuggestionAdminRead(StorySuggestionRead):
     user_email: str | None = None
     user_display_name: str | None = None
     child_profile_name: str | None = None
+    promoted_story_idea_title: str | None = None
 
 
 class StorySuggestionAdminUpdate(SQLModel):

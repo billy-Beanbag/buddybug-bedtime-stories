@@ -13,6 +13,7 @@ class StorySuggestion(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id", index=True)
     child_profile_id: int | None = Field(default=None, foreign_key="childprofile.id", index=True)
+    promoted_story_idea_id: int | None = Field(default=None, foreign_key="storyidea.id", index=True)
     title: str | None = None
     brief: str
     desired_outcome: str | None = None

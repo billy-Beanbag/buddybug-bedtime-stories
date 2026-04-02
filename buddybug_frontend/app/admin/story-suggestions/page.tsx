@@ -1,11 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { EmptyState } from "@/components/EmptyState";
 import { LoadingState } from "@/components/LoadingState";
 import { useAuth } from "@/context/AuthContext";
-import { apiDelete, apiGet, apiPatch } from "@/lib/api";
+import { apiDelete, apiGet, apiPatch, apiPost } from "@/lib/api";
 import { ADMIN_PRIMARY_BUTTON, ADMIN_SECONDARY_BUTTON } from "@/lib/admin-styles";
 import type { StorySuggestionAdminListResponse, StorySuggestionAdminRead } from "@/lib/types";
 
@@ -94,13 +95,40 @@ export default function AdminStorySuggestionsPage() {
     }
   }
 
+  async function handlePromoteToIdea(suggestion: StorySuggestionAdminRead) {
+    if (!token) {
+      return;
+    }
+    setSavingId(suggestion.id);
+    setError(null);
+    setMessage(null);
+    try {
+      const updated = await apiPost<StorySuggestionAdminRead>(
+        `/admin/story-suggestions/${suggestion.id}/promote-to-idea`,
+        {},
+        { token },
+      );
+      setItems((current) => current.map((item) => (item.id === suggestion.id ? updated : item)));
+      setMessage(
+        updated.promoted_story_idea_id
+          ? `Suggestion ${suggestion.id} promoted to idea ${updated.promoted_story_idea_id}.`
+          : `Suggestion ${suggestion.id} was already promoted.`,
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to promote story suggestion");
+    } finally {
+      setSavingId(null);
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-xl font-semibold text-slate-900">Story suggestions</h2>
           <p className="mt-1 text-sm text-slate-600">
-            Review parent-submitted briefs and decide which ones should feed the editorial reference pool.
+            Review parent-submitted briefs, approve reusable references, or promote a suggestion directly into the ideas
+            queue.
           </p>
         </div>
         <div className="flex flex-wrap items-end gap-2">
@@ -153,6 +181,11 @@ export default function AdminStorySuggestionsPage() {
                         Reusable reference
                       </span>
                     ) : null}
+                    {item.promoted_story_idea_id ? (
+                      <span className="rounded-full bg-indigo-100 px-3 py-2 text-sm font-medium text-indigo-800">
+                        Promoted to idea #{item.promoted_story_idea_id}
+                      </span>
+                    ) : null}
                     {!item.allow_reference_use ? (
                       <span className="rounded-full bg-amber-100 px-3 py-2 text-sm font-medium text-amber-800">
                         No reuse permission
@@ -196,6 +229,16 @@ export default function AdminStorySuggestionsPage() {
                       className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900"
                     />
                   </label>
+                  {item.promoted_story_idea_id ? (
+                    <p className="mt-3 text-sm text-slate-600">
+                      <span className="font-medium text-slate-900">Ideas queue:</span>{" "}
+                      {item.promoted_story_idea_title || `Story idea ${item.promoted_story_idea_id}`} is now available in{" "}
+                      <Link href="/admin/ideas" className="text-indigo-700 underline-offset-2 hover:underline">
+                        Admin Ideas
+                      </Link>
+                      .
+                    </p>
+                  ) : null}
                 </div>
                 <div className="flex w-full flex-col gap-2 lg:w-[220px]">
                   <button
@@ -221,6 +264,14 @@ export default function AdminStorySuggestionsPage() {
                     className={`rounded-2xl px-4 py-3 text-sm font-medium ${ADMIN_SECONDARY_BUTTON}`}
                   >
                     {item.approved_as_reference ? "Remove reference flag" : "Approve as reference"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={savingId === item.id || Boolean(item.promoted_story_idea_id)}
+                    onClick={() => void handlePromoteToIdea(item)}
+                    className={`rounded-2xl px-4 py-3 text-sm font-medium ${ADMIN_PRIMARY_BUTTON} disabled:opacity-60`}
+                  >
+                    {item.promoted_story_idea_id ? "Already promoted" : "Promote to idea"}
                   </button>
                   <button
                     type="button"

@@ -3,7 +3,7 @@ from sqlmodel import Session, select
 
 from app.database import get_session
 from app.middleware.request_context import get_request_id_from_request
-from app.models import ChildProfile, StorySuggestion, User
+from app.models import ChildProfile, StoryIdea, StorySuggestion, User
 from app.schemas.story_suggestion_schema import (
     StorySuggestionAdminListResponse,
     StorySuggestionAdminRead,
@@ -14,6 +14,7 @@ from app.schemas.story_suggestion_schema import (
 )
 from app.services.audit_service import create_audit_log
 from app.services.child_profile_service import validate_child_profile_ownership
+from app.services.content_lane_service import validate_content_lane_key
 from app.services.i18n_service import validate_language_code
 from app.services.review_service import utc_now
 from app.services.subscription_service import has_premium_access
@@ -51,10 +52,12 @@ def _get_story_suggestion_or_404(session: Session, suggestion_id: int) -> StoryS
 def _build_admin_read(session: Session, suggestion: StorySuggestion) -> StorySuggestionAdminRead:
     user = session.get(User, suggestion.user_id)
     child_profile = session.get(ChildProfile, suggestion.child_profile_id) if suggestion.child_profile_id else None
+    promoted_story_idea = session.get(StoryIdea, suggestion.promoted_story_idea_id) if suggestion.promoted_story_idea_id else None
     return StorySuggestionAdminRead(
         id=suggestion.id,
         user_id=suggestion.user_id,
         child_profile_id=suggestion.child_profile_id,
+        promoted_story_idea_id=suggestion.promoted_story_idea_id,
         title=suggestion.title,
         brief=suggestion.brief,
         desired_outcome=suggestion.desired_outcome,
@@ -71,6 +74,59 @@ def _build_admin_read(session: Session, suggestion: StorySuggestion) -> StorySug
         user_email=user.email if user is not None else None,
         user_display_name=user.display_name if user is not None else None,
         child_profile_name=child_profile.display_name if child_profile is not None else None,
+        promoted_story_idea_title=promoted_story_idea.title if promoted_story_idea is not None else None,
+    )
+
+
+def _derive_story_idea_title(suggestion: StorySuggestion) -> str:
+    if suggestion.title and suggestion.title.strip():
+        return suggestion.title.strip()
+    brief = suggestion.brief.strip()
+    if not brief:
+        return "Parent suggested story"
+    trimmed = brief.split(".")[0].strip() or brief
+    if len(trimmed) <= 80:
+        return trimmed
+    shortened = trimmed[:77].rsplit(" ", 1)[0].strip()
+    return f"{shortened or trimmed[:77].strip()}..."
+
+
+def _build_promoted_story_idea(
+    session: Session,
+    *,
+    suggestion: StorySuggestion,
+    child_profile: ChildProfile | None,
+) -> StoryIdea:
+    lane = validate_content_lane_key(session, age_band=suggestion.age_band, content_lane_key=None)
+    goal = (suggestion.desired_outcome or "").strip()
+    include_notes = (suggestion.inspiration_notes or "").strip()
+    avoid_notes = (suggestion.avoid_notes or "").strip()
+    editorial_notes = (suggestion.editorial_notes or "").strip()
+    premise_parts = [suggestion.brief.strip()]
+    if goal:
+        premise_parts.append(f"Desired outcome: {goal}")
+    if include_notes:
+        premise_parts.append(f"Include if helpful: {include_notes}")
+    if avoid_notes:
+        premise_parts.append(f"Avoid if possible: {avoid_notes}")
+    if editorial_notes:
+        premise_parts.append(f"Editorial notes: {editorial_notes}")
+
+    return StoryIdea(
+        title=_derive_story_idea_title(suggestion),
+        premise=" ".join(part for part in premise_parts if part),
+        hook_type="parent_suggestion",
+        age_band=lane.age_band,
+        content_lane_key=lane.key,
+        tone="warm, grounded, child-led",
+        setting=include_notes or "home and neighborhood adventure",
+        theme=goal or "confidence, connection, and imagination",
+        bedtime_feeling=goal or "safe, reassured, and gently satisfied",
+        main_characters=child_profile.display_name if child_profile is not None else "Buddybug",
+        supporting_characters="Buddybug" if child_profile is not None else None,
+        estimated_minutes=6,
+        status="idea_pending",
+        generation_source="parent_suggestion",
     )
 
 
@@ -189,6 +245,50 @@ def update_story_suggestion_for_admin(
         actor_user=current_user,
         request_id=get_request_id_from_request(request),
         metadata=payload.model_dump(exclude_unset=True),
+    )
+    return _build_admin_read(session, suggestion)
+
+
+@admin_router.post(
+    "/{suggestion_id}/promote-to-idea",
+    response_model=StorySuggestionAdminRead,
+    status_code=status.HTTP_201_CREATED,
+    summary="Promote a story suggestion into the ideas queue",
+)
+def promote_story_suggestion_to_idea(
+    suggestion_id: int,
+    request: Request,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_editor_user),
+) -> StorySuggestionAdminRead:
+    suggestion = _get_story_suggestion_or_404(session, suggestion_id)
+    existing_idea = session.get(StoryIdea, suggestion.promoted_story_idea_id) if suggestion.promoted_story_idea_id else None
+    if existing_idea is not None:
+        return _build_admin_read(session, suggestion)
+
+    child_profile = session.get(ChildProfile, suggestion.child_profile_id) if suggestion.child_profile_id else None
+    story_idea = _build_promoted_story_idea(session, suggestion=suggestion, child_profile=child_profile)
+    session.add(story_idea)
+    session.commit()
+    session.refresh(story_idea)
+
+    suggestion.promoted_story_idea_id = story_idea.id
+    if suggestion.status in {"submitted", "in_review"}:
+        suggestion.status = "approved"
+    suggestion.updated_at = utc_now()
+    session.add(suggestion)
+    session.commit()
+    session.refresh(suggestion)
+
+    create_audit_log(
+        session,
+        action_type="story_suggestion_promoted_to_idea",
+        entity_type="story_suggestion",
+        entity_id=str(suggestion.id),
+        summary=f"Promoted story suggestion {suggestion.id} to story idea {story_idea.id}",
+        actor_user=current_user,
+        request_id=get_request_id_from_request(request),
+        metadata={"story_idea_id": story_idea.id},
     )
     return _build_admin_read(session, suggestion)
 
