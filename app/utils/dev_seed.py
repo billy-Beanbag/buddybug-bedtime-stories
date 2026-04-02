@@ -86,7 +86,7 @@ def ensure_demo_user(
 
 
 def ensure_demo_story_ideas(session: Session) -> list[StoryIdea]:
-    generated_payloads = generate_story_idea_payloads(
+    batch = generate_story_idea_payloads(
         count=2,
         age_band="3-7",
         content_lane_key=None,
@@ -97,7 +97,7 @@ def ensure_demo_story_ideas(session: Session) -> list[StoryIdea]:
     )
 
     ideas: list[StoryIdea] = []
-    for payload in generated_payloads:
+    for payload in batch.payloads:
         existing = session.exec(select(StoryIdea).where(StoryIdea.title == payload["title"])).first()
         if existing is None:
             existing = StoryIdea(**payload)
@@ -151,8 +151,8 @@ def ensure_story_pages(session: Session, story_draft: StoryDraft, story_idea: St
         story_draft=story_draft,
         story_idea=story_idea,
         target_page_count=8,
-        min_pages=8,
-        max_pages=8,
+        min_pages=5,
+        max_pages=6,
     )
     pages: list[StoryPage] = []
     for payload in payloads:

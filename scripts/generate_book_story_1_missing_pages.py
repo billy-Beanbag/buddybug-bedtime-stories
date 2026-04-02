@@ -281,8 +281,8 @@ def main() -> None:
             story_draft=story_draft,
             story_idea=story_idea,
             target_page_count=None,
-            min_pages=8,
-            max_pages=10,
+            min_pages=5,
+            max_pages=6,
         )
         payload_by_page = {int(item["page_number"]): item for item in payloads}
         requested_pages = sorted({int(arg) for arg in sys.argv[1:]}) if len(sys.argv) > 1 else []

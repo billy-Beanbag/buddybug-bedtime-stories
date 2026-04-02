@@ -57,8 +57,8 @@ class GenerateDraftJobRequest(BaseModel):
 
 class GenerateIllustrationPlanJobRequest(BaseModel):
     story_draft_id: int
-    min_pages: int = Field(default=8, ge=1)
-    max_pages: int = Field(default=14, ge=1)
+    min_pages: int = Field(default=5, ge=1)
+    max_pages: int = Field(default=6, ge=1)
 
 
 class GeneratePageIllustrationsJobRequest(BaseModel):
