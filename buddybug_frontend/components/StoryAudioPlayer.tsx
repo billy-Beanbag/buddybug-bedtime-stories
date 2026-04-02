@@ -47,7 +47,6 @@ export function StoryAudioPlayer({
   const [storyReadsItself, setStoryReadsItself] = useState(false);
   const [segmentIndex, setSegmentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [playbackIssue, setPlaybackIssue] = useState<string | null>(null);
 
   const orderedSegments = useMemo(() => {
     return [...narration.segments].sort((a, b) => a.page_number - b.page_number);
@@ -87,7 +86,6 @@ export function StoryAudioPlayer({
 
     audio.onplay = () => {
       setIsPlaying(true);
-      setPlaybackIssue(null);
       void trackAudioStarted(bookId, narration.voice.display_name, {
         token,
         user,
@@ -109,7 +107,6 @@ export function StoryAudioPlayer({
         src: audio.currentSrc,
         pageNumber: latestOrderedSegmentsRef.current[latestSegmentIndexRef.current]?.page_number,
       });
-      setPlaybackIssue(message);
     };
 
     audio.onended = () => {
@@ -158,7 +155,6 @@ export function StoryAudioPlayer({
     setStoryReadsItself(options.autoAdvance);
     setSegmentIndex(targetIndex);
     setIsPlaying(false);
-    setPlaybackIssue(null);
 
     audio.pause();
     audio.src = targetSegmentUrl;
@@ -183,14 +179,12 @@ export function StoryAudioPlayer({
         src: targetSegmentUrl,
         pageNumber: targetSegment.page_number,
       });
-      setPlaybackIssue(message);
       window.setTimeout(() => {
         if (playbackRequestIdRef.current !== requestId) {
           return;
         }
         void audio.play()
           .then(() => {
-            setPlaybackIssue(null);
             if (options.syncPage && targetSegment.page_number !== currentPageNumber) {
               pendingSegmentPageRef.current = targetSegment.page_number;
               latestOnPageChangeRef.current(targetSegment.page_number, { behavior: "smooth" });
@@ -207,7 +201,6 @@ export function StoryAudioPlayer({
               src: targetSegmentUrl,
               pageNumber: targetSegment.page_number,
             });
-            setPlaybackIssue(retryMessage);
           });
       }, 100);
     }
@@ -316,11 +309,6 @@ export function StoryAudioPlayer({
           {isPlaying ? "Pause" : "Play"}
         </button>
       </div>
-      {playbackIssue ? (
-        <p className="mt-3 text-sm text-rose-700">
-          Narration playback issue: {playbackIssue}
-        </p>
-      ) : null}
     </section>
   );
 }
