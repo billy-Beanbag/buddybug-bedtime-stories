@@ -175,6 +175,7 @@ function ReaderPageContent() {
   const narrationPendingSinceRef = useRef<number | null>(null);
   const narrationPollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastHeaderScrollYRef = useRef(0);
+  const headerHiddenAnchorYRef = useRef<number | null>(null);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
 
   const narratedStoriesEnabled = isEnabled("narrated_stories_enabled");
@@ -742,10 +743,12 @@ function ReaderPageContent() {
   useEffect(() => {
     if (usePagedPreviewReview) {
       setIsHeaderVisible(true);
+      headerHiddenAnchorYRef.current = null;
       return;
     }
     lastHeaderScrollYRef.current = typeof window !== "undefined" ? window.scrollY : 0;
     setIsHeaderVisible(true);
+    headerHiddenAnchorYRef.current = null;
 
     let frameId = 0;
 
@@ -757,10 +760,20 @@ function ReaderPageContent() {
 
       if (currentScrollY <= 24) {
         setIsHeaderVisible(true);
+        headerHiddenAnchorYRef.current = null;
       } else if (delta > 10) {
         setIsHeaderVisible(false);
+        headerHiddenAnchorYRef.current = currentScrollY;
+      } else if (!isHeaderVisible) {
+        const anchor = Math.max(headerHiddenAnchorYRef.current ?? previousScrollY, currentScrollY);
+        headerHiddenAnchorYRef.current = anchor;
+        if (anchor - currentScrollY >= 80) {
+          setIsHeaderVisible(true);
+          headerHiddenAnchorYRef.current = null;
+        }
       } else if (delta < -8) {
         setIsHeaderVisible(true);
+        headerHiddenAnchorYRef.current = null;
       }
 
       lastHeaderScrollYRef.current = currentScrollY;
@@ -779,8 +792,9 @@ function ReaderPageContent() {
         window.cancelAnimationFrame(frameId);
       }
       window.removeEventListener("scroll", scheduleHeaderVisibility);
+      headerHiddenAnchorYRef.current = null;
     };
-  }, [bookId, previewRefreshKey, usePagedPreviewReview]);
+  }, [bookId, isHeaderVisible, previewRefreshKey, usePagedPreviewReview]);
 
   useEffect(() => {
     if (!readAlongDetail || readAlongDetail.session.book_id === bookId) {

@@ -288,7 +288,7 @@ export default function LibraryPage() {
               </div>
               <Link
                 href="/story-suggestions"
-                className="rounded-2xl bg-[linear-gradient(135deg,#4338ca_0%,#5b21b6_100%)] px-4 py-3 text-sm font-medium text-white shadow-[0_16px_36px_rgba(79,70,229,0.18)]"
+                className="rounded-2xl bg-[linear-gradient(135deg,#4338ca_0%,#5b21b6_100%)] px-4 py-3 text-sm font-medium text-white shadow-[0_16px_36px_rgba(79,70,229,0.18)] visited:text-white hover:text-white focus:text-white active:text-white"
               >
                 Open story suggestions
               </Link>

@@ -139,7 +139,7 @@ export default function AdminDashboardPage() {
           <div className="flex flex-wrap gap-2">
             <Link
               href="/admin/workflow"
-              className="rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-500"
+              className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 shadow-sm transition hover:bg-slate-50"
             >
               Open workflow
             </Link>
