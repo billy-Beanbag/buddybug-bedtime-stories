@@ -19,6 +19,11 @@ enum DeliveryType {
   LAUNCH_GIFT
 }
 
+enum StoryMode {
+  BEDTIME
+  ADVENTURE
+}
+
 enum PersonalizedGiftStatus {
   PENDING
   GENERATED
@@ -46,20 +51,23 @@ model Subscriber {
 }
 
 model Story {
-  id          String          @id @default(cuid())
-  slug        String          @unique
-  title       String
-  ageMin      Int
-  ageMax      Int
-  contentHtml String?
-  contentJson Json?
-  pdfUrl      String?
-  isActive    Boolean         @default(true)
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  deliveries  StoryDelivery[]
+  id            String          @id @default(cuid())
+  slug          String          @unique
+  title         String
+  ageMin        Int
+  ageMax        Int
+  storyMode     StoryMode       @default(BEDTIME)
+  coverImageUrl String?
+  contentHtml   String?
+  contentJson   Json?
+  pagesJson     Json?
+  pdfUrl        String?
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  deliveries    StoryDelivery[]
 
-  @@index([isActive, ageMin, ageMax])
+  @@index([isActive, storyMode, ageMin, ageMax])
 }
 
 model StoryDelivery {

@@ -6,7 +6,12 @@ import { PRELAUNCH_STAFF_ACCESS_COOKIE } from "@/lib/prelaunch/config";
 export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
-  const response = NextResponse.redirect(new URL("/", request.url));
+  const response = new NextResponse(null, {
+    status: 307,
+    headers: {
+      Location: "/",
+    },
+  });
   response.cookies.set(PRELAUNCH_STAFF_ACCESS_COOKIE, "", {
     httpOnly: true,
     sameSite: "lax",

@@ -1,3 +1,4 @@
+import { StoryMode } from "@/generated/prisma/client";
 import type { Prisma, Story, Subscriber } from "@/generated/prisma/client";
 
 export async function pickRandomEligibleStory(
@@ -7,6 +8,7 @@ export async function pickRandomEligibleStory(
   const candidates = await tx.story.findMany({
     where: {
       isActive: true,
+      storyMode: StoryMode.BEDTIME,
       ageMin: {
         lte: subscriber.childAge,
       },
@@ -25,8 +27,11 @@ export async function pickRandomEligibleStory(
       title: true,
       ageMin: true,
       ageMax: true,
+      storyMode: true,
+      coverImageUrl: true,
       contentHtml: true,
       contentJson: true,
+      pagesJson: true,
       pdfUrl: true,
       isActive: true,
       createdAt: true,

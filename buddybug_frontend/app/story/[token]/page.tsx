@@ -1,6 +1,8 @@
 import Link from "next/link";
+import Image from "next/image";
 
 import { APP_URL } from "@/lib/prelaunch/config";
+import { parseStoryPages } from "@/lib/prelaunch/story-content";
 import { getStoryDeliveryByToken, markStoryDeliveryOpened } from "@/lib/prelaunch/service";
 
 export const runtime = "nodejs";
@@ -43,6 +45,8 @@ export default async function StoryReaderPage({ params }: StoryReaderPageProps) 
     return <InvalidStoryState expired />;
   }
 
+  const storyPages = parseStoryPages(delivery.story.pagesJson);
+
   await markStoryDeliveryOpened(delivery.id);
 
   return (
@@ -57,11 +61,48 @@ export default async function StoryReaderPage({ params }: StoryReaderPageProps) 
           </p>
         </div>
 
-        <article
-          className="bb-story-html mt-8"
-          // Story HTML is server-authored seed/editorial content, not subscriber input.
-          dangerouslySetInnerHTML={{ __html: delivery.story.contentHtml }}
-        />
+        {delivery.story.coverImageUrl ? (
+          <div className="mt-8 overflow-hidden rounded-[1.75rem] border border-indigo-100 bg-white shadow-sm">
+            <Image
+              src={delivery.story.coverImageUrl}
+              alt={`${delivery.story.title} cover illustration`}
+              width={1200}
+              height={900}
+              className="h-auto w-full object-cover"
+              unoptimized
+            />
+          </div>
+        ) : null}
+
+        {storyPages.length ? (
+          <div className="mt-8 space-y-8">
+            {storyPages.map((page) => (
+              <article key={page.pageNumber} className="overflow-hidden rounded-[1.75rem] border border-indigo-100 bg-white shadow-sm">
+                {page.imageUrl ? (
+                  <Image
+                    src={page.imageUrl}
+                    alt={page.imageAlt || `${delivery.story.title} page ${page.pageNumber} illustration`}
+                    width={1200}
+                    height={900}
+                    className="h-auto w-full object-cover"
+                    unoptimized
+                  />
+                ) : null}
+                <div className="p-5 sm:p-6">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-indigo-500">Page {page.pageNumber}</p>
+                  {page.heading ? <h2 className="mt-2 text-2xl font-semibold text-slate-950">{page.heading}</h2> : null}
+                  <p className="mt-3 text-base leading-8 text-slate-700 sm:text-lg">{page.text}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <article
+            className="bb-story-html mt-8"
+            // Story HTML is server-authored seed/editorial content, not subscriber input.
+            dangerouslySetInnerHTML={{ __html: delivery.story.contentHtml }}
+          />
+        )}
 
         <div className="mt-10 rounded-[1.75rem] border border-indigo-100 bg-indigo-50/70 p-5 text-sm leading-7 text-slate-700">
           <p className="font-semibold text-slate-950">Why this page is private</p>

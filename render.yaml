@@ -31,6 +31,9 @@ services:
       # STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PRICE_ID_PREMIUM_MONTHLY
       # STRIPE_SUCCESS_URL, STRIPE_CANCEL_URL (use your Vercel URL)
       # STORY_GENERATION_API_KEY, STORY_GENERATION_MODEL for live AI story + idea generation
+      # ILLUSTRATION_GENERATION_PROVIDER, ILLUSTRATION_GENERATION_API_KEY, ILLUSTRATION_GENERATION_MODEL
+      # STORAGE_PUBLIC_BASE_URL should be your Render URL (https://buddybug-api.onrender.com)
+      # On paid Render, attach a persistent disk and set STORAGE_LOCAL_BASE_PATH to that mount path
       - key: CORS_ALLOW_ORIGINS
         sync: false
       - key: STRIPE_SECRET_KEY
@@ -54,4 +57,18 @@ services:
       - key: STORY_GENERATION_TIMEOUT_SECONDS
         sync: false
       - key: STORY_IDEA_GENERATION_USE_LLM
+        sync: false
+      - key: ILLUSTRATION_GENERATION_PROVIDER
+        sync: false
+      - key: ILLUSTRATION_GENERATION_API_KEY
+        sync: false
+      - key: ILLUSTRATION_GENERATION_MODEL
+        sync: false
+      - key: ILLUSTRATION_GENERATION_BASE_URL
+        sync: false
+      - key: ILLUSTRATION_GENERATION_TIMEOUT_SECONDS
+        sync: false
+      - key: ILLUSTRATION_GENERATION_DEBUG
+        sync: false
+      - key: STORAGE_LOCAL_BASE_PATH
         sync: false

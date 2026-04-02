@@ -63,12 +63,19 @@ Deploy Buddybug to the internet using **GitHub**, **Vercel** (frontend), **Rende
    | `STORY_GENERATION_BASE_URL` | `https://api.openai.com/v1` |
    | `STORY_GENERATION_TIMEOUT_SECONDS` | `45` |
    | `STORY_IDEA_GENERATION_USE_LLM` | `true` |
+   | `ILLUSTRATION_GENERATION_PROVIDER` | `openai` |
+   | `ILLUSTRATION_GENERATION_API_KEY` | your live image provider key |
+   | `ILLUSTRATION_GENERATION_MODEL` | `gpt-image-1` |
+   | `ILLUSTRATION_GENERATION_BASE_URL` | `https://api.openai.com/v1` |
+   | `ILLUSTRATION_GENERATION_TIMEOUT_SECONDS` | `90` |
+   | `ILLUSTRATION_GENERATION_DEBUG` | `false` *(set `true` only while debugging provider calls)* |
    | `STRIPE_SECRET_KEY` | `sk_test_...` from [Stripe Dashboard → Developers → API keys](https://dashboard.stripe.com/test/apikeys) |
    | `STRIPE_WEBHOOK_SECRET` | *(add after Step 4)* |
    | `STRIPE_PRICE_ID_PREMIUM_MONTHLY` | `price_...` from Stripe Products/Prices |
    | `STRIPE_SUCCESS_URL` | `https://your-app.vercel.app/profile?billing=success` |
    | `STRIPE_CANCEL_URL` | `https://your-app.vercel.app/profile?billing=cancel` |
    | `STORAGE_PUBLIC_BASE_URL` | `https://buddybug-api.onrender.com` *(your Render service URL)* |
+   | `STORAGE_LOCAL_BASE_PATH` | mount path of your Render persistent disk, e.g. `/var/data` |
 
 7. For `CORS_ALLOW_ORIGINS`, include all origins that will call the API:
    - Production: `https://your-app.vercel.app` (no trailing slash; do not wrap in quotes)
@@ -79,7 +86,15 @@ Deploy Buddybug to the internet using **GitHub**, **Vercel** (frontend), **Rende
 
    For story ideas specifically: if `STORY_GENERATION_API_KEY` or `STORY_GENERATION_MODEL` is missing on Render, `/story-ideas/generate` will silently fall back to curated ideas even though local AI generation works.
 
-9. **Copy your backend URL** – e.g. `https://buddybug-api.onrender.com`
+   For illustrations specifically: if `ILLUSTRATION_GENERATION_PROVIDER` is left as `mock`, or if the image API key/model are missing, the app will keep generating placeholders instead of live AI artwork.
+
+9. **Attach persistent storage for generated images** on paid Render plans
+
+   Live illustrations are currently stored on the backend filesystem. For production, attach a persistent disk in Render and set `STORAGE_LOCAL_BASE_PATH` to that mount path so generated images survive restarts and redeploys.
+
+   Without a persistent disk, generated artwork may disappear after a deploy or instance replacement even if the database rows still exist.
+
+10. **Copy your backend URL** – e.g. `https://buddybug-api.onrender.com`
 
 ---
 

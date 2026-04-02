@@ -27,7 +27,12 @@ export async function GET(request: NextRequest) {
   }
 
   const nextPath = getSafeRedirectPath(request.nextUrl.searchParams.get("next"));
-  const response = NextResponse.redirect(new URL(nextPath, request.url));
+  const response = new NextResponse(null, {
+    status: 307,
+    headers: {
+      Location: nextPath,
+    },
+  });
   response.cookies.set(PRELAUNCH_STAFF_ACCESS_COOKIE, getPrelaunchStaffAccessCookieValue(), {
     httpOnly: true,
     sameSite: "lax",

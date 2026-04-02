@@ -8,6 +8,8 @@ import { InstallAppPrompt } from "@/components/InstallAppPrompt";
 import { MarketingFooter } from "@/components/marketing/MarketingFooter";
 import { MarketingHeader } from "@/components/marketing/MarketingHeader";
 import { OfflineStatusBanner } from "@/components/OfflineStatusBanner";
+import { PrelaunchShell } from "@/components/prelaunch/PrelaunchShell";
+import { isPrelaunchModeEnabled, isPrelaunchPublicPath } from "@/lib/prelaunch/config";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -19,9 +21,14 @@ export function AppShell({ children }: { children: ReactNode }) {
   const isGettingStartedRoute = pathname.startsWith("/getting-started");
   const isPricingRoute = pathname === "/pricing";
   const isMarketingRoute = ["/", "/features", "/pricing", "/how-it-works", "/for-parents", "/faq", "/status"].includes(pathname);
+  const isPrelaunchPublicRoute = isPrelaunchModeEnabled() && isPrelaunchPublicPath(pathname);
 
   if (isAdminRoute) {
     return <div className="min-h-screen bg-slate-100 text-slate-900">{children}</div>;
+  }
+
+  if (isPrelaunchPublicRoute) {
+    return <PrelaunchShell>{children}</PrelaunchShell>;
   }
 
   if (isMarketingRoute) {
