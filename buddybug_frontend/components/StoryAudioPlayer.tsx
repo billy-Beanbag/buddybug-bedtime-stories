@@ -35,51 +35,207 @@ export function StoryAudioPlayer({
   resolvedControls,
 }: StoryAudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const shouldResumeAfterAdvance = useRef(false);
-  const resumeDelayMs = useRef(0);
-  const resumeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadedSegmentUrlRef = useRef("");
+  const latestSegmentIndexRef = useRef(0);
+  const latestOrderedSegmentsRef = useRef<NarrationSegmentRead[]>([]);
+  const latestEnabledRef = useRef(false);
+  const latestStoryReadsItselfRef = useRef(false);
+  const latestOnPageChangeRef = useRef(onPageChange);
+  const pendingSegmentPageRef = useRef<number | null>(null);
+  const playbackRequestIdRef = useRef(0);
   const [enabled, setEnabled] = useState(false);
   const [storyReadsItself, setStoryReadsItself] = useState(false);
   const [segmentIndex, setSegmentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackIssue, setPlaybackIssue] = useState<string | null>(null);
 
   const orderedSegments = useMemo(() => {
     return [...narration.segments].sort((a, b) => a.page_number - b.page_number);
   }, [narration.segments]);
 
   const currentSegment: NarrationSegmentRead | null = orderedSegments[segmentIndex] ?? null;
-  const autoplayAllowed = resolvedControls?.allow_audio_autoplay ?? true;
   const currentSegmentUrl = currentSegment ? resolveApiUrl(currentSegment.audio_url) : "";
 
-  async function playCurrentSegment(enableAutoAdvance: boolean) {
+  useEffect(() => {
+    const audio = new Audio();
+    audio.preload = "auto";
+    audioRef.current = audio;
+
+    return () => {
+      audio.pause();
+      audio.src = "";
+      audio.onplay = null;
+      audio.onpause = null;
+      audio.onended = null;
+      audioRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    latestSegmentIndexRef.current = segmentIndex;
+    latestOrderedSegmentsRef.current = orderedSegments;
+    latestEnabledRef.current = enabled;
+    latestStoryReadsItselfRef.current = storyReadsItself;
+    latestOnPageChangeRef.current = onPageChange;
+  }, [enabled, onPageChange, orderedSegments, segmentIndex, storyReadsItself]);
+
+  useEffect(() => {
     const audio = audioRef.current;
-    if (!audio || !currentSegmentUrl) {
+    if (!audio) {
       return;
     }
 
-    if (audio.src !== currentSegmentUrl) {
-      audio.src = currentSegmentUrl;
+    audio.onplay = () => {
+      setIsPlaying(true);
+      setPlaybackIssue(null);
+      void trackAudioStarted(bookId, narration.voice.display_name, {
+        token,
+        user,
+        language,
+        childProfileId,
+      });
+    };
+
+    audio.onpause = () => {
+      setIsPlaying(false);
+    };
+
+    audio.onerror = () => {
+      const mediaError = audio.error;
+      const detail = mediaError ? `media error ${mediaError.code}` : "unknown media error";
+      const message = `Narration could not play (${detail}).`;
+      console.error("[StoryAudioPlayer]", message, {
+        bookId,
+        src: audio.currentSrc,
+        pageNumber: latestOrderedSegmentsRef.current[latestSegmentIndexRef.current]?.page_number,
+      });
+      setPlaybackIssue(message);
+    };
+
+    audio.onended = () => {
+      setIsPlaying(false);
+      void trackAudioCompleted(bookId, narration.voice.display_name, {
+        token,
+        user,
+        language,
+        childProfileId,
+      });
+      const nextIndex = latestSegmentIndexRef.current + 1;
+      const nextSegment = latestOrderedSegmentsRef.current[nextIndex];
+      if (
+        !latestEnabledRef.current ||
+        !nextSegment ||
+        !latestStoryReadsItselfRef.current
+      ) {
+        return;
+      }
+      void startPlaybackAtIndex(nextIndex, {
+        autoAdvance: true,
+        syncPage: true,
+      });
+    };
+  }, [bookId, childProfileId, language, narration.voice.display_name, token, user]);
+
+  async function startPlaybackAtIndex(
+    targetIndex: number,
+    options: { autoAdvance: boolean; syncPage: boolean },
+  ) {
+    const audio = audioRef.current;
+    if (!audio || !orderedSegments.length) {
+      return;
     }
 
-    if (audio.ended) {
-      audio.currentTime = 0;
+    const targetSegment = orderedSegments[targetIndex];
+    const targetSegmentUrl = targetSegment ? resolveApiUrl(targetSegment.audio_url) : "";
+    if (!targetSegment || !targetSegmentUrl) {
+      return;
     }
+
+    playbackRequestIdRef.current += 1;
+    const requestId = playbackRequestIdRef.current;
 
     setEnabled(true);
-    setStoryReadsItself(enableAutoAdvance);
+    setStoryReadsItself(options.autoAdvance);
+    setSegmentIndex(targetIndex);
+    setIsPlaying(false);
+    setPlaybackIssue(null);
+
+    audio.pause();
+    audio.src = targetSegmentUrl;
+    audio.currentTime = 0;
+    audio.load();
+    loadedSegmentUrlRef.current = targetSegmentUrl;
 
     try {
       await audio.play();
-    } catch {
-      audio.load();
+      if (options.syncPage && targetSegment.page_number !== currentPageNumber) {
+        pendingSegmentPageRef.current = targetSegment.page_number;
+        latestOnPageChangeRef.current(targetSegment.page_number, { behavior: "smooth" });
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? `${error.name}: ${error.message}`
+          : "Unable to start narration playback.";
+      console.error("[StoryAudioPlayer] play() failed", {
+        message,
+        bookId,
+        src: targetSegmentUrl,
+        pageNumber: targetSegment.page_number,
+      });
+      setPlaybackIssue(message);
       window.setTimeout(() => {
-        void audio.play().catch(() => undefined);
+        if (playbackRequestIdRef.current !== requestId) {
+          return;
+        }
+        void audio.play()
+          .then(() => {
+            setPlaybackIssue(null);
+            if (options.syncPage && targetSegment.page_number !== currentPageNumber) {
+              pendingSegmentPageRef.current = targetSegment.page_number;
+              latestOnPageChangeRef.current(targetSegment.page_number, { behavior: "smooth" });
+            }
+          })
+          .catch((retryError) => {
+            const retryMessage =
+              retryError instanceof Error
+                ? `${retryError.name}: ${retryError.message}`
+                : "Unable to continue narration playback.";
+            console.error("[StoryAudioPlayer] retry play() failed", {
+              message: retryMessage,
+              bookId,
+              src: targetSegmentUrl,
+              pageNumber: targetSegment.page_number,
+            });
+            setPlaybackIssue(retryMessage);
+          });
       }, 100);
     }
   }
 
+  async function playCurrentSegment(enableAutoAdvance: boolean) {
+    let targetIndex = segmentIndex;
+    if (orderedSegments[targetIndex]?.page_number === 0) {
+      const firstStoryIndex = orderedSegments.findIndex((segment) => segment.page_number > 0);
+      if (firstStoryIndex >= 0) {
+        targetIndex = firstStoryIndex;
+      }
+    }
+
+    await startPlaybackAtIndex(targetIndex, {
+      autoAdvance: enableAutoAdvance,
+      syncPage: true,
+    });
+  }
+
   useEffect(() => {
+    if (pendingSegmentPageRef.current !== null) {
+      if (currentPageNumber !== pendingSegmentPageRef.current) {
+        return;
+      }
+      pendingSegmentPageRef.current = null;
+    }
+
     const matchedIndex = orderedSegments.findIndex((segment) => segment.page_number === currentPageNumber);
     if (matchedIndex >= 0 && matchedIndex !== segmentIndex) {
       setSegmentIndex(matchedIndex);
@@ -87,32 +243,19 @@ export function StoryAudioPlayer({
   }, [currentPageNumber, orderedSegments, segmentIndex]);
 
   useEffect(() => {
-    if (!currentSegment || !audioRef.current) {
+    const audio = audioRef.current;
+    if (!currentSegment || !audio) {
       return;
     }
-    if (resumeTimeoutRef.current) {
-      clearTimeout(resumeTimeoutRef.current);
-      resumeTimeoutRef.current = null;
+    if (!audio.paused) {
+      return;
     }
     if (loadedSegmentUrlRef.current !== currentSegmentUrl) {
-      audioRef.current.src = currentSegmentUrl;
-      audioRef.current.load();
+      audio.src = currentSegmentUrl;
+      audio.load();
       loadedSegmentUrlRef.current = currentSegmentUrl;
     }
-    if (enabled && shouldResumeAfterAdvance.current && autoplayAllowed) {
-      const delayMs = resumeDelayMs.current;
-      if (delayMs > 0) {
-        resumeTimeoutRef.current = setTimeout(() => {
-          void audioRef.current?.play().catch(() => undefined);
-          resumeTimeoutRef.current = null;
-        }, delayMs);
-      } else {
-        void audioRef.current.play().catch(() => undefined);
-      }
-    }
-    shouldResumeAfterAdvance.current = false;
-    resumeDelayMs.current = 0;
-  }, [autoplayAllowed, currentSegment, currentSegmentUrl, enabled]);
+  }, [currentSegment, currentSegmentUrl]);
 
   useEffect(() => {
     if (resolvedControls && !resolvedControls.allow_audio_autoplay) {
@@ -124,14 +267,6 @@ export function StoryAudioPlayer({
       });
     }
   }, [bookId, childProfileId, language, resolvedControls, token, user]);
-
-  useEffect(() => {
-    return () => {
-      if (resumeTimeoutRef.current) {
-        clearTimeout(resumeTimeoutRef.current);
-      }
-    };
-  }, []);
 
   if (!currentSegment) {
     return null;
@@ -170,8 +305,7 @@ export function StoryAudioPlayer({
               audioRef.current?.pause();
               return;
             }
-            resumeDelayMs.current = 0;
-            void playCurrentSegment(autoplayAllowed);
+            void playCurrentSegment(true);
           }}
           className={`rounded-2xl px-4 py-2.5 text-sm font-semibold transition ${
             enabled || isPlaying
@@ -182,45 +316,11 @@ export function StoryAudioPlayer({
           {isPlaying ? "Pause" : "Play"}
         </button>
       </div>
-
-      <audio
-        ref={audioRef}
-        controls={false}
-        autoPlay={false}
-        preload="auto"
-        className="pointer-events-none absolute -left-[9999px] h-px w-px opacity-0"
-        src={currentSegmentUrl}
-        onPlay={() => {
-          setIsPlaying(true);
-          void trackAudioStarted(bookId, narration.voice.display_name, {
-            token,
-            user,
-            language,
-            childProfileId,
-          });
-        }}
-        onPause={() => setIsPlaying(false)}
-        onEnded={() => {
-          setIsPlaying(false);
-          void trackAudioCompleted(bookId, narration.voice.display_name, {
-            token,
-            user,
-            language,
-            childProfileId,
-          });
-          const nextIndex = segmentIndex + 1;
-          const nextSegment = orderedSegments[nextIndex];
-          if (!enabled || !nextSegment || !storyReadsItself) {
-            return;
-          }
-          shouldResumeAfterAdvance.current = Boolean(autoplayAllowed);
-          resumeDelayMs.current = 550;
-          setSegmentIndex(nextIndex);
-          onPageChange(nextSegment.page_number, { behavior: "smooth" });
-        }}
-      >
-        Your browser does not support audio playback.
-      </audio>
+      {playbackIssue ? (
+        <p className="mt-3 text-sm text-rose-700">
+          Narration playback issue: {playbackIssue}
+        </p>
+      ) : null}
     </section>
   );
 }
