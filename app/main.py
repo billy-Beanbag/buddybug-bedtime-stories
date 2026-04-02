@@ -173,6 +173,9 @@ app.add_middleware(
 mock_assets_dir = Path(STORAGE_LOCAL_BASE_PATH) / "mock-assets"
 mock_assets_dir.mkdir(parents=True, exist_ok=True)
 app.mount("/mock-assets", StaticFiles(directory=mock_assets_dir), name="mock-assets")
+generated_assets_dir = Path(STORAGE_LOCAL_BASE_PATH) / "generated-assets"
+generated_assets_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/generated-assets", StaticFiles(directory=generated_assets_dir), name="generated-assets")
 artwork_dir = PROJECT_ROOT / "Artwork"
 if artwork_dir.exists():
     app.mount("/artwork-assets", StaticFiles(directory=artwork_dir), name="artwork-assets")
