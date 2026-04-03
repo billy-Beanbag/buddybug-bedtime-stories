@@ -100,30 +100,72 @@ def _build_promoted_story_idea(
     lane = validate_content_lane_key(session, age_band=suggestion.age_band, content_lane_key=None)
     goal = (suggestion.desired_outcome or "").strip()
     include_notes = (suggestion.inspiration_notes or "").strip()
-    avoid_notes = (suggestion.avoid_notes or "").strip()
-    editorial_notes = (suggestion.editorial_notes or "").strip()
-    premise_parts = [suggestion.brief.strip()]
-    if goal:
-        premise_parts.append(f"Desired outcome: {goal}")
-    if include_notes:
-        premise_parts.append(f"Include if helpful: {include_notes}")
-    if avoid_notes:
-        premise_parts.append(f"Avoid if possible: {avoid_notes}")
-    if editorial_notes:
-        premise_parts.append(f"Editorial notes: {editorial_notes}")
+    combined_notes = " ".join(
+        part for part in [suggestion.brief.strip(), include_notes, (suggestion.avoid_notes or "").strip(), goal] if part
+    ).casefold()
+
+    if "shortcut" in combined_notes or "quicker way" in combined_notes or "quick way" in combined_notes:
+        hook_type = "clever_shortcut"
+    elif any(token in combined_notes for token in ("spill", "spilled", "splash", "splashed", "mess", "muddy", "baking")):
+        hook_type = "accidental_mess"
+    elif any(token in combined_notes for token in ("race", "contest", "competition", "bet", "who can", "challenge")):
+        hook_type = "silly_competition"
+    elif any(token in combined_notes for token in ("plan", "organise", "organize", "set up", "help", "carry", "stack")):
+        hook_type = "helpful_plan_goes_wrong"
+    else:
+        hook_type = "unexpected_discovery"
+
+    if "zoo" in combined_notes:
+        setting = "zoo picnic lawn"
+    elif "picnic" in combined_notes:
+        setting = "picnic meadow"
+    elif "kitchen" in combined_notes or "baking" in combined_notes:
+        setting = "family kitchen"
+    elif "garden" in combined_notes:
+        setting = "garden path"
+    elif "bedroom" in combined_notes:
+        setting = "bedroom"
+    elif "park" in combined_notes or "playground" in combined_notes:
+        setting = "park playground"
+    elif "beach" in combined_notes:
+        setting = "seaside beach"
+    elif "library" in combined_notes:
+        setting = "library reading nook"
+    elif "school" in combined_notes:
+        setting = "school playground"
+    elif "farm" in combined_notes:
+        setting = "farmyard path"
+    else:
+        setting = "garden path"
+
+    if any(token in combined_notes for token in ("friend", "together", "share")):
+        theme = "friendship"
+    elif any(token in combined_notes for token in ("brave", "confidence", "confident")):
+        theme = "confidence"
+    elif any(token in combined_notes for token in ("kind", "gentle", "caring")):
+        theme = "kindness"
+    elif any(token in combined_notes for token in ("help", "team", "together")):
+        theme = "teamwork"
+    elif any(token in combined_notes for token in ("calm", "sleep", "bedtime")):
+        theme = "reassurance"
+    else:
+        theme = "problem solving"
+
+    bedtime_feeling = goal or "proud, reassured, and calm"
+    supporting_characters = "Buddybug, Verity" if child_profile is not None else "Verity"
 
     return StoryIdea(
         title=_derive_story_idea_title(suggestion),
-        premise=" ".join(part for part in premise_parts if part),
-        hook_type="parent_suggestion",
+        premise=suggestion.brief.strip(),
+        hook_type=hook_type,
         age_band=lane.age_band,
         content_lane_key=lane.key,
         tone="warm, grounded, child-led",
-        setting=include_notes or "home and neighborhood adventure",
-        theme=goal or "confidence, connection, and imagination",
-        bedtime_feeling=goal or "safe, reassured, and gently satisfied",
+        setting=setting,
+        theme=theme,
+        bedtime_feeling=bedtime_feeling,
         main_characters=child_profile.display_name if child_profile is not None else "Buddybug",
-        supporting_characters="Buddybug" if child_profile is not None else None,
+        supporting_characters=supporting_characters,
         estimated_minutes=6,
         status="idea_pending",
         generation_source="parent_suggestion",
@@ -263,14 +305,37 @@ def promote_story_suggestion_to_idea(
 ) -> StorySuggestionAdminRead:
     suggestion = _get_story_suggestion_or_404(session, suggestion_id)
     existing_idea = session.get(StoryIdea, suggestion.promoted_story_idea_id) if suggestion.promoted_story_idea_id else None
-    if existing_idea is not None:
-        return _build_admin_read(session, suggestion)
-
     child_profile = session.get(ChildProfile, suggestion.child_profile_id) if suggestion.child_profile_id else None
-    story_idea = _build_promoted_story_idea(session, suggestion=suggestion, child_profile=child_profile)
-    session.add(story_idea)
-    session.commit()
-    session.refresh(story_idea)
+    refreshed_story_idea = _build_promoted_story_idea(session, suggestion=suggestion, child_profile=child_profile)
+    if existing_idea is not None:
+        if existing_idea.status != "idea_pending":
+            return _build_admin_read(session, suggestion)
+        for field_name in (
+            "title",
+            "premise",
+            "hook_type",
+            "age_band",
+            "content_lane_key",
+            "tone",
+            "setting",
+            "theme",
+            "bedtime_feeling",
+            "main_characters",
+            "supporting_characters",
+            "estimated_minutes",
+            "generation_source",
+        ):
+            setattr(existing_idea, field_name, getattr(refreshed_story_idea, field_name))
+        existing_idea.updated_at = utc_now()
+        session.add(existing_idea)
+        session.commit()
+        session.refresh(existing_idea)
+        story_idea = existing_idea
+    else:
+        story_idea = refreshed_story_idea
+        session.add(story_idea)
+        session.commit()
+        session.refresh(story_idea)
 
     suggestion.promoted_story_idea_id = story_idea.id
     if suggestion.status in {"submitted", "in_review"}:

@@ -267,11 +267,11 @@ export default function AdminStorySuggestionsPage() {
                   </button>
                   <button
                     type="button"
-                    disabled={savingId === item.id || Boolean(item.promoted_story_idea_id)}
+                    disabled={savingId === item.id}
                     onClick={() => void handlePromoteToIdea(item)}
                     className={`rounded-2xl px-4 py-3 text-sm font-medium ${ADMIN_PRIMARY_BUTTON} disabled:opacity-60`}
                   >
-                    {item.promoted_story_idea_id ? "Already promoted" : "Promote to idea"}
+                    {item.promoted_story_idea_id ? "Refresh promoted idea" : "Promote to idea"}
                   </button>
                   <button
                     type="button"
