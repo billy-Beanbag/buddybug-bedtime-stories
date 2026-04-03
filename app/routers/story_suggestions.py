@@ -152,7 +152,8 @@ def _build_promoted_story_idea(
         theme = "problem solving"
 
     bedtime_feeling = goal or "proud, reassured, and calm"
-    supporting_characters = "Buddybug, Verity" if child_profile is not None else "Verity"
+    main_characters = "Buddybug"
+    supporting_characters = "Verity"
 
     return StoryIdea(
         title=_derive_story_idea_title(suggestion),
@@ -164,7 +165,7 @@ def _build_promoted_story_idea(
         setting=setting,
         theme=theme,
         bedtime_feeling=bedtime_feeling,
-        main_characters=child_profile.display_name if child_profile is not None else "Buddybug",
+        main_characters=main_characters,
         supporting_characters=supporting_characters,
         estimated_minutes=6,
         status="idea_pending",
