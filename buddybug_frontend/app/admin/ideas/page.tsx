@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { EmptyState } from "@/components/EmptyState";
 import { LoadingState } from "@/components/LoadingState";
 import { useAuth } from "@/context/AuthContext";
-import { apiGet, apiPost } from "@/lib/api";
+import { apiGet, apiPatch, apiPost } from "@/lib/api";
 import { ADMIN_PRIMARY_BUTTON } from "@/lib/admin-styles";
 import type { AdminStoryIdeaSummary, StoryIdeaBatchGenerateResponse } from "@/lib/types";
 
@@ -120,6 +120,19 @@ export default function AdminIdeasPage() {
     }
   }
 
+  async function handleResetIdea(ideaId: number) {
+    if (!token) return;
+    setMessage(null);
+    setError(null);
+    try {
+      await apiPatch(`/story-ideas/${ideaId}`, { status: "idea_pending" }, { token });
+      setMessage("Idea reset to pending.");
+      await loadIdeas();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to reset idea");
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -231,7 +244,15 @@ export default function AdminIdeasPage() {
                         Reject
                       </button>
                     </>
-                  ) : null}
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => void handleResetIdea(idea.id)}
+                      className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-medium text-slate-800"
+                    >
+                      Reset to pending
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
