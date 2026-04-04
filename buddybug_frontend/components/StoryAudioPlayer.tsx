@@ -23,6 +23,12 @@ interface StoryAudioPlayerProps {
   resolvedControls?: ResolvedParentalControlsResponse | null;
 }
 
+const PLAYBACK_START_DELAY_MS = 2000;
+
+function delay(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
 export function StoryAudioPlayer({
   bookId,
   narration,
@@ -48,6 +54,10 @@ export function StoryAudioPlayer({
   const [segmentIndex, setSegmentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
 
+  function cancelPendingPlayback() {
+    playbackRequestIdRef.current += 1;
+  }
+
   const orderedSegments = useMemo(() => {
     return [...narration.segments].sort((a, b) => a.page_number - b.page_number);
   }, [narration.segments]);
@@ -61,6 +71,7 @@ export function StoryAudioPlayer({
     audioRef.current = audio;
 
     return () => {
+      cancelPendingPlayback();
       audio.pause();
       audio.src = "";
       audio.onplay = null;
@@ -162,12 +173,18 @@ export function StoryAudioPlayer({
     audio.load();
     loadedSegmentUrlRef.current = targetSegmentUrl;
 
+    if (options.syncPage && targetSegment.page_number !== currentPageNumber) {
+      pendingSegmentPageRef.current = targetSegment.page_number;
+      latestOnPageChangeRef.current(targetSegment.page_number, { behavior: "smooth" });
+    }
+
+    await delay(PLAYBACK_START_DELAY_MS);
+    if (playbackRequestIdRef.current !== requestId) {
+      return;
+    }
+
     try {
       await audio.play();
-      if (options.syncPage && targetSegment.page_number !== currentPageNumber) {
-        pendingSegmentPageRef.current = targetSegment.page_number;
-        latestOnPageChangeRef.current(targetSegment.page_number, { behavior: "smooth" });
-      }
     } catch (error) {
       const message =
         error instanceof Error
@@ -184,12 +201,7 @@ export function StoryAudioPlayer({
           return;
         }
         void audio.play()
-          .then(() => {
-            if (options.syncPage && targetSegment.page_number !== currentPageNumber) {
-              pendingSegmentPageRef.current = targetSegment.page_number;
-              latestOnPageChangeRef.current(targetSegment.page_number, { behavior: "smooth" });
-            }
-          })
+          .then(() => undefined)
           .catch((retryError) => {
             const retryMessage =
               retryError instanceof Error
@@ -274,6 +286,7 @@ export function StoryAudioPlayer({
             setEnabled((current) => {
               const next = !current;
               if (!next) {
+                cancelPendingPlayback();
                 setStoryReadsItself(false);
                 setIsPlaying(false);
                 audioRef.current?.pause();
@@ -294,6 +307,7 @@ export function StoryAudioPlayer({
           disabled={!currentSegment}
           onClick={() => {
             if (isPlaying) {
+              cancelPendingPlayback();
               setStoryReadsItself(false);
               audioRef.current?.pause();
               return;
