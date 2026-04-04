@@ -143,8 +143,10 @@ def get_campaign_detail(
     active_only: bool = True,
 ) -> SeasonalCampaignDetailResponse:
     campaign = get_campaign_or_404(session, campaign_key=campaign_key)
-    now = utc_now()
-    if active_only and (not campaign.is_active or campaign.start_at > now or campaign.end_at < now):
+    now = _normalize_datetime(utc_now())
+    campaign_start = _normalize_datetime(campaign.start_at)
+    campaign_end = _normalize_datetime(campaign.end_at)
+    if active_only and (not campaign.is_active or campaign_start > now or campaign_end < now):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Campaign not found")
 
     items = list(
