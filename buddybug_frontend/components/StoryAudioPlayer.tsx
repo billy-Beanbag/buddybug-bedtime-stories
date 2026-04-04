@@ -220,7 +220,7 @@ export function StoryAudioPlayer({
 
   async function playCurrentSegment(enableAutoAdvance: boolean) {
     let targetIndex = segmentIndex;
-    if (orderedSegments[targetIndex]?.page_number === 0) {
+    if (currentPageNumber === 0 || orderedSegments[targetIndex]?.page_number === 0) {
       const firstStoryIndex = orderedSegments.findIndex((segment) => segment.page_number > 0);
       if (firstStoryIndex >= 0) {
         targetIndex = firstStoryIndex;

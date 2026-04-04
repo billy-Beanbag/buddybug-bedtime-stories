@@ -177,6 +177,7 @@ function ReaderPageContent() {
   const lastHeaderScrollYRef = useRef(0);
   const headerHiddenAnchorYRef = useRef<number | null>(null);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const isHeaderVisibleRef = useRef(true);
 
   const narratedStoriesEnabled = isEnabled("narrated_stories_enabled");
   const effectiveLanguage = selectedChildProfile?.language || locale;
@@ -741,6 +742,10 @@ function ReaderPageContent() {
   }, [usePagedPreviewReview, visiblePages]);
 
   useEffect(() => {
+    isHeaderVisibleRef.current = isHeaderVisible;
+  }, [isHeaderVisible]);
+
+  useEffect(() => {
     if (usePagedPreviewReview) {
       setIsHeaderVisible(true);
       headerHiddenAnchorYRef.current = null;
@@ -764,7 +769,7 @@ function ReaderPageContent() {
       } else if (delta > 10) {
         setIsHeaderVisible(false);
         headerHiddenAnchorYRef.current = currentScrollY;
-      } else if (!isHeaderVisible) {
+      } else if (!isHeaderVisibleRef.current) {
         const anchor = Math.max(headerHiddenAnchorYRef.current ?? previousScrollY, currentScrollY);
         headerHiddenAnchorYRef.current = anchor;
         if (anchor - currentScrollY >= 80) {
@@ -794,7 +799,7 @@ function ReaderPageContent() {
       window.removeEventListener("scroll", scheduleHeaderVisibility);
       headerHiddenAnchorYRef.current = null;
     };
-  }, [bookId, isHeaderVisible, previewRefreshKey, usePagedPreviewReview]);
+  }, [bookId, previewRefreshKey, usePagedPreviewReview]);
 
   useEffect(() => {
     if (!readAlongDetail || readAlongDetail.session.book_id === bookId) {
@@ -1230,7 +1235,9 @@ function ReaderPageContent() {
             usePagedPreviewReview
               ? "rounded-[1.75rem] border border-white/70 bg-white/92 px-4 py-3 shadow-sm"
               : `sticky top-2 z-20 rounded-[1.75rem] border border-white/70 bg-white/88 px-4 py-3 shadow-sm backdrop-blur transition duration-200 ${
-                  isHeaderVisible ? "translate-y-0 opacity-100" : "-translate-y-[calc(100%+0.75rem)] opacity-0"
+                  isHeaderVisible
+                    ? "translate-y-0 opacity-100"
+                    : "pointer-events-none -translate-y-[calc(100%+0.75rem)] opacity-0"
                 }`
           }
         >
