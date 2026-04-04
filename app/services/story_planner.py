@@ -4,8 +4,10 @@ from app.models import StoryIdea
 from app.schemas.story_pipeline_schema import IllustrationScene, StoryBeatCard, StoryBrief, StoryMetadata, StoryOutline
 from app.services.story_engine_data import (
     BEDTIME_MODE,
+    BEDTIME_ALLOWED_HOOK_KEYS,
     DEFAULT_ADVENTURE_TONE,
     STANDARD_MODE,
+    STANDARD_ALLOWED_HOOK_KEYS,
 )
 from app.utils.seed_content_lanes import STORY_ADVENTURES_8_12_LANE_KEY
 
@@ -26,6 +28,19 @@ def _infer_mode(idea: StoryIdea) -> str:
     if any(token in normalized_tone for token in {"playful", "cheeky", "mischief", "fun", "humour", "humor", "adventurous"}):
         return STANDARD_MODE
     return BEDTIME_MODE
+
+
+def _normalized_hook_type(*, idea: StoryIdea, mode: str | None = None) -> str:
+    resolved_mode = mode or _infer_mode(idea)
+    allowed = BEDTIME_ALLOWED_HOOK_KEYS if resolved_mode == BEDTIME_MODE else STANDARD_ALLOWED_HOOK_KEYS
+    raw = (idea.hook_type or "").strip()
+    if raw in allowed:
+        return raw
+    lowered = raw.casefold().replace(" ", "_")
+    for hook in allowed:
+        if hook == lowered:
+            return hook
+    return "gentle_problem" if resolved_mode == BEDTIME_MODE else "unexpected_discovery"
 
 
 def _lead_names(idea: StoryIdea) -> tuple[list[str], list[str], str, str]:
@@ -153,7 +168,7 @@ def _all_characters(idea: StoryIdea) -> list[str]:
 
 
 def _scene_must_show_for_hook(idea: StoryIdea) -> dict[str, list[str]]:
-    hook_type = idea.hook_type or "gentle_problem"
+    hook_type = _normalized_hook_type(idea=idea)
     setting = idea.setting
     if hook_type == "missing_item":
         item = _missing_item_for_idea(idea)
@@ -259,7 +274,7 @@ def build_story_outline(idea: StoryIdea) -> StoryOutline:
     main_characters, supporting_characters, lead, second = _lead_names(idea)
     helper = supporting_characters[0] if supporting_characters else ("Buddybug" if lead != "Buddybug" else second)
     calmer = "Verity" if "Verity" in main_characters + supporting_characters else second
-    hook_type = idea.hook_type or "gentle_problem"
+    hook_type = _normalized_hook_type(idea=idea)
     setting = idea.setting
     mode = _infer_mode(idea)
 
@@ -458,12 +473,13 @@ def build_story_metadata(
     """Build normalized metadata for generation, rewriting, illustration, and review."""
     main_characters, supporting_characters, _, _ = _lead_names(idea)
     mode = _infer_mode(idea)
+    hook_type = _normalized_hook_type(idea=idea, mode=mode)
     tone = idea.tone
     if idea.content_lane_key == STORY_ADVENTURES_8_12_LANE_KEY:
         tone = DEFAULT_ADVENTURE_TONE
     return StoryMetadata(
         mode=mode,
-        hook_type=idea.hook_type or "gentle_problem",
+        hook_type=hook_type,
         series_key=idea.series_key,
         series_title=idea.series_title,
         tone=tone,
@@ -489,7 +505,7 @@ def build_story_metadata(
 
 
 def _ordinary_world_for_story(idea: StoryIdea) -> str:
-    hook_type = idea.hook_type or "gentle_problem"
+    hook_type = _normalized_hook_type(idea=idea)
     main_characters, _, lead, second = _lead_names(idea)
     pair = " and ".join(main_characters[:2]) if len(main_characters) >= 2 else lead
     setting = idea.setting
@@ -511,7 +527,7 @@ def _ordinary_world_for_story(idea: StoryIdea) -> str:
 def build_story_beat_card(idea: StoryIdea, *, outline: StoryOutline | None = None) -> StoryBeatCard:
     """Convert a lightweight outline into a more concrete narrative beat card."""
     outline = outline or build_story_outline(idea)
-    hook_type = idea.hook_type or "gentle_problem"
+    hook_type = _normalized_hook_type(idea=idea)
     ordinary_world = _ordinary_world_for_story(idea)
     comic_or_surprising_reveal = outline.event
     turning_point = outline.resolution

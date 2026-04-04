@@ -112,7 +112,15 @@ def _opening_dialogue(metadata: StoryMetadata) -> str:
         return f'"I can do it all at once," said {lead}, sounding very pleased with the idea.'
     if metadata.hook_type == "silly_competition":
         return f'"I bet I can do it better," said {lead}.'
-    return f'"I can fix this," said {lead}.'
+    if metadata.hook_type == "accidental_mess":
+        return f'"Oh no," said {lead}. "Catch the bowl!"'
+    if metadata.hook_type == "unexpected_discovery":
+        return f'"Did that belong there before?" asked {lead}.'
+    if metadata.hook_type == "misunderstanding":
+        return f'"Wait," said {lead}. "I thought that meant something else."'
+    if metadata.hook_type == "missing_item":
+        return f'"It was here a moment ago," said {lead}.'
+    return f'"Hold on," said {lead}. "Let us look properly first."'
 
 
 def _middle_dialogue(metadata: StoryMetadata) -> str:
@@ -339,8 +347,8 @@ def _build_standard_story(
         paragraphs = [
             (
                 f"{outline.opening_hook} {_setting_detail(metadata.setting)} "
-                f"{_opening_dialogue(metadata)} {second} knew at once that this was exactly the kind of idea that might end brilliantly or end in a heap. "
-                f"Either way, it was far too interesting to ignore."
+                f"{_opening_dialogue(metadata)} {second} stopped what they were doing at once and looked more carefully. "
+                f"Whatever had happened, it was clearly the sort of muddle that would only make sense if they followed the right clue."
             ),
             (
                 f"{outline.problem} {lead} kept going for a moment longer than was wise. "
