@@ -39,6 +39,10 @@ node_modules/
 dist/
 build/
 *.tsbuildinfo
+buddybug_frontend/generated/
+
+# Local design and reference assets
+Artwork/
 
 
 

@@ -1,0 +1,181 @@
+flowchart TB
+    direction TB
+    root["Home"]
+    login["Login"]
+    register["Register"]
+    register_free["Register Free"]
+    register_premium["Register Premium"]
+    profile["Profile"]
+    library["Library"]
+    reader_bookId["Reader"]
+    saved["Saved Stories"]
+    children["Children"]
+    children_childId_comfort["Child Comfort"]
+    settings["Settings"]
+    settings_account["Account"]
+    settings_family["Family"]
+    settings_downloads["Downloads"]
+    settings_notifications["Notifications"]
+    settings_privacy["Privacy"]
+    settings_about["About"]
+    achievements["Achievements"]
+    reading_plans["Reading Plans"]
+    reading_plans_planId["Plan Detail"]
+    educator["Educator"]
+    educator_classroom_sets_setId["Classroom Set"]
+    getting_started["Getting Started"]
+    getting_started_child["Child Setup"]
+    onboarding["Onboarding"]
+    onboarding_child["Onboarding Child"]
+    onboarding_preferences["Preferences"]
+    onboarding_bedtime["Bedtime Mode"]
+    onboarding_first_story["First Story"]
+    pricing["Pricing"]
+    upgrade["Upgrade"]
+    refer["Refer a Friend"]
+    gifts["Gifts"]
+    promo["Redeem Code"]
+    bedtime_pack["Bedtime Pack"]
+    continue_reading["Continue Reading"]
+    read_along["Read Along"]
+    family_digest["Family Digest"]
+    notifications["Notifications"]
+    campaigns_campaignKey["Campaign"]
+    for_parents["For Parents"]
+    how_it_works["How It Works"]
+    features["Features"]
+    faq["FAQ"]
+    support["Support"]
+    privacy["Privacy"]
+    privacy_policy["Privacy Policy"]
+    terms["Terms"]
+    whats_new["What's New"]
+    parental_controls["Parental Controls"]
+    beta["Beta"]
+    status["Status"]
+    admin["Admin"]
+    admin_ideas["Ideas"]
+    admin_editorial["Editorial"]
+    admin_editorial_projectId["Editorial Project"]
+    admin_translations["Translations"]
+    admin_story_pages["Story Pages"]
+    admin_lifecycle_userId["User Lifecycle"]
+    admin_moderation["Moderation"]
+    admin_moderation_caseId["Moderation Case"]
+    admin_changelog["Changelog"]
+    admin_beta["Beta"]
+    admin_beta_cohortId["Beta Cohort"]
+    admin_visual_references["Visual References"]
+    admin_housekeeping["Housekeeping"]
+    admin_drafts["Drafts"]
+    admin_drafts_draftId["Draft Detail"]
+    admin_organization["Organization"]
+    admin_api_keys["API Keys"]
+    admin_reporting["Reporting"]
+    admin_illustrations["Illustrations"]
+    admin_workflow["Workflow"]
+    admin_status["Admin Status"]
+    admin_billing_recovery["Billing Recovery"]
+    admin_billing_recovery_caseId["Recovery Case"]
+    admin_search["Search"]
+    admin_feature_flags["Feature Flags"]
+    admin_account_health["Account Health"]
+    admin_support["Support"]
+    admin_support_ticketId["Support Ticket"]
+    admin_books["Books"]
+    admin_analytics["Analytics"]
+    admin_audio["Audio"]
+    admin_story_quality["Story Quality"]
+    admin_maintenance["Maintenance"]
+    admin_runbooks["Runbooks"]
+    admin_incidents["Incidents"]
+    admin_incidents_incidentId["Incident"]
+    root --> login
+    root --> register
+    register --> register_free
+    register --> register_premium
+    root --> profile
+    root --> library
+    reader --> reader_bookId
+    root --> saved
+    root --> children
+    children_childId --> children_childId_comfort
+    root --> settings
+    settings --> settings_account
+    settings --> settings_family
+    settings --> settings_downloads
+    settings --> settings_notifications
+    settings --> settings_privacy
+    settings --> settings_about
+    root --> achievements
+    root --> reading_plans
+    reading_plans --> reading_plans_planId
+    root --> educator
+    educator_classroom_sets --> educator_classroom_sets_setId
+    root --> getting_started
+    getting_started --> getting_started_child
+    root --> onboarding
+    onboarding --> onboarding_child
+    onboarding --> onboarding_preferences
+    onboarding --> onboarding_bedtime
+    onboarding --> onboarding_first_story
+    root --> pricing
+    root --> upgrade
+    root --> refer
+    root --> gifts
+    root --> promo
+    root --> bedtime_pack
+    root --> continue_reading
+    root --> read_along
+    root --> family_digest
+    root --> notifications
+    campaigns --> campaigns_campaignKey
+    root --> for_parents
+    root --> how_it_works
+    root --> features
+    root --> faq
+    root --> support
+    root --> privacy
+    root --> privacy_policy
+    root --> terms
+    root --> whats_new
+    root --> parental_controls
+    root --> beta
+    root --> status
+    root --> admin
+    admin --> admin_ideas
+    admin --> admin_editorial
+    admin_editorial --> admin_editorial_projectId
+    admin --> admin_translations
+    admin --> admin_story_pages
+    admin_lifecycle --> admin_lifecycle_userId
+    admin --> admin_moderation
+    admin_moderation --> admin_moderation_caseId
+    admin --> admin_changelog
+    admin --> admin_beta
+    admin_beta --> admin_beta_cohortId
+    admin --> admin_visual_references
+    admin --> admin_housekeeping
+    admin --> admin_drafts
+    admin_drafts --> admin_drafts_draftId
+    admin --> admin_organization
+    admin --> admin_api_keys
+    admin --> admin_reporting
+    admin --> admin_illustrations
+    admin --> admin_workflow
+    admin --> admin_status
+    admin --> admin_billing_recovery
+    admin_billing_recovery --> admin_billing_recovery_caseId
+    admin --> admin_search
+    admin --> admin_feature_flags
+    admin --> admin_account_health
+    admin --> admin_support
+    admin_support --> admin_support_ticketId
+    admin --> admin_books
+    admin --> admin_analytics
+    admin --> admin_audio
+    admin --> admin_story_quality
+    admin --> admin_maintenance
+    admin --> admin_runbooks
+    admin --> admin_incidents
+    admin_incidents --> admin_incidents_incidentId

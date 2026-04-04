@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Buddybug UI Concept Board</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f3f0ff;
+      --bg-deep: #e4ddff;
+      --surface: rgba(255, 255, 255, 0.82);
+      --surface-strong: rgba(255, 255, 255, 0.94);
+      --line: rgba(69, 58, 143, 0.12);
+      --text: #1d1a39;
+      --muted: #665f85;
+      --accent: #5146d8;
+      --accent-2: #7b5cff;
+      --gold: #f4c96c;
+      --glow: rgba(114, 93, 255, 0.24);
+      --shadow: 0 25px 70px rgba(57, 47, 125, 0.14);
+      --phone-shadow: 0 28px 90px rgba(42, 33, 101, 0.22);
+      --radius-xl: 34px;
+      --radius-lg: 24px;
+      --radius-md: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.92), transparent 24%),
+        radial-gradient(circle at top right, rgba(244, 201, 108, 0.26), transparent 18%),
+        linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
+      color: var(--text);
+      font-family: "Manrope", sans-serif;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.18;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px);
+      background-size: 28px 28px;
+      mask-image: radial-gradient(circle at center, black 42%, transparent 88%);
+    }
+
+    .page {
+      width: min(1320px, calc(100vw - 40px));
+      margin: 0 auto;
+      padding: 42px 0 80px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.08fr 0.92fr;
+      gap: 28px;
+      align-items: end;
+    }
+
+    .hero-card,
+    .panel,
+    .notes-card {
+      border: 1px solid var(--line);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .hero-card {
+      border-radius: 36px;
+      padding: 30px 30px 28px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-card::after {
+      content: "";
+      position: absolute;
+      right: -40px;
+      top: -40px;
+      width: 180px;
+      height: 180px;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(244, 201, 108, 0.45), transparent 68%);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 8px 13px;
+      background: rgba(81, 70, 216, 0.08);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    h1, h2, h3 {
+      font-family: "Fraunces", serif;
+      margin: 0;
+      letter-spacing: -0.03em;
+    }
+
+    h1 {
+      margin-top: 18px;
+      font-size: clamp(38px, 4.9vw, 68px);
+      line-height: 0.94;
+      max-width: 10ch;
+    }
+
+    .hero-copy {
+      margin-top: 16px;
+      max-width: 62ch;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.7;
+    }
+
+    .hero-points {
+      margin-top: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .hero-points span {
+      border-radius: 999px;
+      background: rgba(29, 26, 57, 0.05);
+      border: 1px solid rgba(29, 26, 57, 0.06);
+      padding: 10px 14px;
+      font-size: 13px;
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .notes-card {
+      border-radius: 36px;
+      padding: 26px;
+      display: grid;
+      gap: 16px;
+      align-self: stretch;
+    }
+
+    .notes-card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.65;
+      font-size: 14px;
+    }
+
+    .notes-card ul {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      line-height: 1.65;
+      font-size: 14px;
+    }
+
+    .tabs {
+      margin-top: 28px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .tab {
+      appearance: none;
+      border: 1px solid rgba(79, 68, 208, 0.1);
+      background: rgba(255, 255, 255, 0.7);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 12px 18px;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 180ms ease;
+    }
+
+    .tab.active {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: white;
+      box-shadow: 0 16px 40px rgba(81, 70, 216, 0.28);
+    }
+
+    .panel-wrap {
+      margin-top: 20px;
+    }
+
+    .panel {
+      display: none;
+      border-radius: 36px;
+      padding: 26px;
+      gap: 26px;
+      min-height: 760px;
+    }
+
+    .panel.active {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+    }
+
+    .concept-copy {
+      display: grid;
+      align-content: start;
+      gap: 18px;
+    }
+
+    .concept-copy p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.72;
+    }
+
+    .concept-copy .summary {
+      border-radius: 24px;
+      background: rgba(81, 70, 216, 0.07);
+      border: 1px solid rgba(81, 70, 216, 0.08);
+      padding: 16px 18px;
+    }
+
+    .concept-copy .summary strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--text);
+      font-size: 15px;
+    }
+
+    .feature-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .feature {
+      border-radius: 22px;
+      padding: 16px 18px;
+      background: var(--surface-strong);
+      border: 1px solid rgba(29, 26, 57, 0.06);
+    }
+
+    .feature strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    .feature span {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .device-stage {
+      display: grid;
+      place-items: center;
+      min-height: 100%;
+    }
+
+    .phone {
+      width: min(370px, 100%);
+      min-height: 720px;
+      border-radius: 42px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.48)),
+        linear-gradient(180deg, #fbfaff 0%, #f0ecff 100%);
+      border: 1px solid rgba(255,255,255,0.6);
+      box-shadow: var(--phone-shadow);
+      padding: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .phone::before {
+      content: "";
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 110px;
+      height: 24px;
+      border-radius: 999px;
+      background: rgba(28, 23, 59, 0.92);
+      z-index: 2;
+    }
+
+    .screen {
+      border-radius: 30px;
+      min-height: 692px;
+      overflow: hidden;
+      padding: 18px;
+      background:
+        radial-gradient(circle at top, rgba(255,255,255,0.92), transparent 24%),
+        linear-gradient(180deg, #f7f5ff 0%, #ece7ff 100%);
+      position: relative;
+    }
+
+    .screen::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 82% 10%, rgba(244, 201, 108, 0.2), transparent 18%),
+        radial-gradient(circle at 12% 20%, rgba(123, 92, 255, 0.12), transparent 22%);
+    }
+
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 700;
+      color: rgba(29, 26, 57, 0.82);
+      padding: 2px 6px 8px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .app-top {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .app-chip,
+    .ghost-pill,
+    .small-pill,
+    .tiny-pill {
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .app-chip {
+      background: rgba(255,255,255,0.75);
+      border: 1px solid rgba(29,26,57,0.06);
+      padding: 10px 12px;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .app-chip .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--gold), #ffeaaf);
+      box-shadow: 0 0 16px rgba(244, 201, 108, 0.5);
+    }
+
+    .icon-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 18px;
+      border: 1px solid rgba(29,26,57,0.08);
+      background: rgba(255,255,255,0.84);
+      display: grid;
+      place-items: center;
+      color: var(--text);
+      font-weight: 800;
+      box-shadow: 0 12px 25px rgba(57, 47, 125, 0.08);
+    }
+
+    .headline-block {
+      position: relative;
+      z-index: 1;
+      margin-top: 18px;
+    }
+
+    .headline-block h3 {
+      font-size: 28px;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .headline-block p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .segmented {
+      position: relative;
+      z-index: 1;
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      padding: 6px;
+      border-radius: 22px;
+      background: rgba(255,255,255,0.78);
+      border: 1px solid rgba(29,26,57,0.06);
+    }
+
+    .segmented span {
+      border-radius: 16px;
+      padding: 10px 8px;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .segmented span.active {
+      color: white;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 12px 24px rgba(81, 70, 216, 0.22);
+    }
+
+    .feature-card {
+      position: relative;
+      z-index: 1;
+      margin-top: 18px;
+      border-radius: 28px;
+      padding: 18px;
+      color: white;
+      background: linear-gradient(145deg, #151839 0%, #2b2c77 55%, #5242cb 100%);
+      box-shadow: 0 22px 50px rgba(41, 37, 108, 0.26);
+      overflow: hidden;
+    }
+
+    .feature-card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 18% 20%, rgba(255,255,255,0.14), transparent 28%),
+        radial-gradient(circle at 82% 22%, rgba(244, 201, 108, 0.24), transparent 20%);
+      pointer-events: none;
+    }
+
+    .feature-card .eyeline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .feature-card .eyeline .tiny-pill {
+      padding: 7px 10px;
+      background: rgba(255,255,255,0.16);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 800;
+    }
+
+    .feature-card h4 {
+      margin: 14px 0 6px;
+      font-size: 22px;
+      line-height: 1.05;
+      position: relative;
+      z-index: 1;
+      font-family: "Fraunces", serif;
+    }
+
+    .feature-card p {
+      margin: 0;
+      position: relative;
+      z-index: 1;
+      color: rgba(241, 240, 255, 0.92);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .stack {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .mini-row,
+    .light-card,
+    .story-card,
+    .reader-card,
+    .progress-card,
+    .audio-row,
+    .bottom-nav {
+      border: 1px solid rgba(29, 26, 57, 0.06);
+      background: rgba(255,255,255,0.82);
+      box-shadow: 0 12px 24px rgba(57, 47, 125, 0.08);
+    }
+
+    .mini-row {
+      border-radius: 22px;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .mini-row strong,
+    .light-card strong {
+      display: block;
+      color: var(--text);
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+
+    .mini-row span,
+    .light-card span {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .light-card {
+      border-radius: 24px;
+      padding: 16px;
+    }
+
+    .grid-books {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .story-card {
+      border-radius: 24px;
+      overflow: hidden;
+      padding: 10px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .story-cover {
+      height: 126px;
+      border-radius: 18px;
+      background:
+        linear-gradient(140deg, rgba(21,24,57,1) 0%, rgba(42,43,106,1) 55%, rgba(83,67,194,1) 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .story-cover::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 80% 18%, rgba(244, 201, 108, 0.34), transparent 24%),
+        radial-gradient(circle at 22% 20%, rgba(255,255,255,0.16), transparent 30%);
+    }
+
+    .story-cover.lighter {
+      background: linear-gradient(135deg, #ebf1ff 0%, #d9dcff 50%, #f7d79a 100%);
+    }
+
+    .story-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .story-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1.4;
+    }
+
+    .story-sub {
+      margin-top: 5px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .badge {
+      padding: 6px 9px;
+      border-radius: 999px;
+      background: rgba(29, 26, 57, 0.07);
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .audio-badge {
+      margin-top: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(244, 201, 108, 0.18);
+      color: #845d00;
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .bottom-nav {
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      bottom: 14px;
+      border-radius: 24px;
+      padding: 10px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      background: rgba(255,255,255,0.94);
+      backdrop-filter: blur(16px);
+    }
+
+    .bottom-nav span {
+      border-radius: 16px;
+      padding: 11px 8px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .bottom-nav span.active {
+      color: white;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 12px 24px rgba(81, 70, 216, 0.24);
+    }
+
+    .reader-top {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border-radius: 20px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.84);
+      border: 1px solid rgba(29,26,57,0.06);
+      box-shadow: 0 12px 24px rgba(57, 47, 125, 0.08);
+    }
+
+    .reader-top .title-group {
+      min-width: 0;
+    }
+
+    .reader-top .title-group strong {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+    }
+
+    .reader-top .title-group span {
+      display: block;
+      margin-top: 4px;
+      font-size: 15px;
+      color: var(--text);
+      font-weight: 800;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 190px;
+    }
+
+    .reader-card {
+      position: relative;
+      z-index: 1;
+      margin-top: 16px;
+      border-radius: 28px;
+      padding: 16px;
+    }
+
+    .reader-illustration {
+      height: 275px;
+      border-radius: 24px;
+      background:
+        linear-gradient(135deg, #1b2143 0%, #2d397c 48%, #6c5af3 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .reader-illustration::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 75% 16%, rgba(244, 201, 108, 0.26), transparent 20%),
+        radial-gradient(circle at 22% 20%, rgba(255,255,255,0.14), transparent 26%);
+    }
+
+    .reader-text {
+      margin-top: 14px;
+      border-radius: 22px;
+      background: #fffaf1;
+      padding: 18px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+    }
+
+    .reader-text p {
+      margin: 0;
+      color: #3f3a25;
+      font-size: 16px;
+      line-height: 1.8;
+    }
+
+    .progress-card {
+      margin-top: 12px;
+      border-radius: 20px;
+      padding: 14px;
+    }
+
+    .progress-bar {
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(81, 70, 216, 0.12);
+      overflow: hidden;
+      margin-top: 10px;
+    }
+
+    .progress-bar span {
+      display: block;
+      height: 100%;
+      width: 38%;
+      background: linear-gradient(90deg, var(--accent), #8b7dff);
+      border-radius: 999px;
+    }
+
+    .audio-row {
+      margin-top: 14px;
+      border-radius: 22px;
+      padding: 14px;
+      display: flex;
+      gap: 12px;
+    }
+
+    .audio-row .btn-primary,
+    .audio-row .btn-secondary {
+      flex: 1;
+      border-radius: 18px;
+      padding: 14px 12px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .audio-row .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: white;
+      box-shadow: 0 14px 28px rgba(81, 70, 216, 0.22);
+    }
+
+    .audio-row .btn-secondary {
+      background: rgba(255,255,255,0.8);
+      color: var(--text);
+      border: 1px solid rgba(29,26,57,0.08);
+    }
+
+    .ghost-note {
+      margin-top: 12px;
+      border-radius: 20px;
+      padding: 13px 14px;
+      background: rgba(255,255,255,0.62);
+      border: 1px dashed rgba(81, 70, 216, 0.18);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .footer-note {
+      margin-top: 26px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 1100px) {
+      .hero,
+      .panel.active {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .page {
+        width: min(100vw - 24px, 1320px);
+        padding-top: 24px;
+      }
+
+      .hero-card,
+      .notes-card,
+      .panel {
+        border-radius: 28px;
+      }
+
+      .phone {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="hero">
+      <div class="hero-card">
+        <div class="eyebrow">Buddybug UI Concepts</div>
+        <h1>Calmer navigation. Cleaner reading. A more premium family feel.</h1>
+        <p class="hero-copy">
+          These concept mockups are separate from the live app and are meant to show the strongest visual directions for Buddybug:
+          a thumb-friendly signed-in shell, a less cluttered library, and a more elegant reader with quieter chrome.
+        </p>
+        <div class="hero-points">
+          <span>Bottom navigation instead of menu-first routing</span>
+          <span>Lighter browsing cards with one featured hero card</span>
+          <span>Cleaner reader controls and slimmer scroll-away top bar</span>
+        </div>
+      </div>
+
+      <aside class="notes-card">
+        <div class="eyebrow">What This Is</div>
+        <p>
+          A visual concept board only. It does not replace or alter the working app. It is designed to help us agree a direction
+          before changing anything real.
+        </p>
+        <ul>
+          <li>Concept 1: a more accommodating signed-in app shell</li>
+          <li>Concept 2: a simpler, calmer library flow</li>
+          <li>Concept 3: a more premium and unobtrusive reader</li>
+        </ul>
+      </aside>
+    </section>
+
+    <div class="tabs">
+      <button class="tab active" data-panel="shell">App Shell & Navigation</button>
+      <button class="tab" data-panel="library">Library Redesign</button>
+      <button class="tab" data-panel="reader">Reader Redesign</button>
+    </div>
+
+    <div class="panel-wrap">
+      <section class="panel active" id="panel-shell">
+        <div class="concept-copy">
+          <div class="eyebrow">Concept 1</div>
+          <h2>Signed-in shell that feels like a family app, not a menu tree</h2>
+          <p>
+            The current signed-in app relies too heavily on the hamburger menu. This concept keeps the top area small and warm,
+            then makes the main destinations thumb-reachable with a bottom tab bar. That creates easier navigation on phones and
+            tablets and makes the app feel more intentional.
+          </p>
+          <div class="summary">
+            <strong>Why this helps</strong>
+            Navigation becomes easier to learn, easier to reach, and more consistent across pages. The menu can become secondary
+            instead of doing all the work.
+          </div>
+          <div class="feature-list">
+            <div class="feature">
+              <strong>Persistent bottom navigation</strong>
+              <span>Home, Library, Continue, and Settings stay available all the time, which removes unnecessary menu opening.</span>
+            </div>
+            <div class="feature">
+              <strong>Compact top status strip</strong>
+              <span>The child profile and account state stay visible without turning the whole header into a heavy card.</span>
+            </div>
+            <div class="feature">
+              <strong>Lighter content rhythm</strong>
+              <span>Main tasks feel like clear destination cards rather than many unrelated stacked panels.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="device-stage">
+          <div class="phone">
+            <div class="screen">
+              <div class="status-row">
+                <span>9:41</span>
+                <span>Wi-Fi 100%</span>
+              </div>
+              <div class="app-top">
+                <div class="app-chip"><span class="dot"></span> Daphne, age 5 · EN</div>
+                <div class="icon-btn">≡</div>
+              </div>
+              <div class="headline-block">
+                <h3>Evening with Buddybug</h3>
+                <p>A softer signed-in shell with clearer destinations and less dependence on the menu.</p>
+              </div>
+
+              <div class="feature-card">
+                <div class="eyeline">
+                  <div class="tiny-pill">Tonight's path</div>
+                  <div class="tiny-pill">3 stories</div>
+                </div>
+                <h4>Moonlit wind-down</h4>
+                <p>One featured card stays special, while the rest of the app becomes lighter and easier to scan.</p>
+              </div>
+
+              <div class="stack">
+                <div class="mini-row">
+                  <div>
+                    <strong>Continue reading</strong>
+                    <span>Glowmoth and the Lantern Ribbon</span>
+                  </div>
+                  <div class="badge">Page 3</div>
+                </div>
+                <div class="mini-row">
+                  <div>
+                    <strong>Bedtime Pack</strong>
+                    <span>Three calm stories and narration ready</span>
+                  </div>
+                  <div class="badge">Ready</div>
+                </div>
+                <div class="mini-row">
+                  <div>
+                    <strong>Saved stories</strong>
+                    <span>Quick return to favourites in one tap</span>
+                  </div>
+                  <div class="badge">12</div>
+                </div>
+                <div class="light-card">
+                  <strong>Family tools</strong>
+                  <span>Profiles, privacy, language, and settings can live as secondary surfaces instead of the primary route structure.</span>
+                </div>
+              </div>
+
+              <div class="bottom-nav">
+                <span class="active">Home</span>
+                <span>Library</span>
+                <span>Continue</span>
+                <span>Settings</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-library">
+        <div class="concept-copy">
+          <div class="eyebrow">Concept 2</div>
+          <h2>Library that starts with a story, not a stack of decisions</h2>
+          <p>
+            The library should feel calmer and faster. This concept keeps the route choice visible, but compresses it into a neat
+            segmented control, keeps one featured recommendation, and then gets the user into the browsing grid straight away.
+          </p>
+          <div class="summary">
+            <strong>Why this helps</strong>
+            The first screen becomes easier to understand. Parents can choose a route quickly, spot a featured story, and browse
+            immediately without reading through multiple stacked cards.
+          </div>
+          <div class="feature-list">
+            <div class="feature">
+              <strong>Compact route control</strong>
+              <span>The current route buttons become one elegant segmented control with less vertical space.</span>
+            </div>
+            <div class="feature">
+              <strong>One hero recommendation</strong>
+              <span>Featured content stays strong, but no longer competes visually with every other part of the page.</span>
+            </div>
+            <div class="feature">
+              <strong>Lighter browse cards</strong>
+              <span>Regular story cards become easier to scan, while premium cues like audio badges stay visible.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="device-stage">
+          <div class="phone">
+            <div class="screen">
+              <div class="status-row">
+                <span>9:41</span>
+                <span>Wi-Fi 100%</span>
+              </div>
+              <div class="app-top">
+                <div class="app-chip"><span class="dot"></span> Library · For Daphne</div>
+                <div class="icon-btn">⌕</div>
+              </div>
+
+              <div class="headline-block">
+                <h3>Start here</h3>
+                <p>One featured recommendation, then the full library below.</p>
+              </div>
+
+              <div class="segmented">
+                <span>All stories</span>
+                <span class="active">Bedtime</span>
+                <span>Adventure</span>
+              </div>
+
+              <div class="feature-card">
+                <div class="eyeline">
+                  <div class="tiny-pill">Tonight's pick</div>
+                  <div class="tiny-pill">Audio ready</div>
+                </div>
+                <h4>Buddybug at the Window Light</h4>
+                <p>Featured content uses the richer dark card style, while browsing cards below become lighter and more breathable.</p>
+              </div>
+
+              <div class="grid-books">
+                <div class="story-card">
+                  <div class="story-cover"></div>
+                  <div class="story-meta">
+                    <div>
+                      <div class="story-title">Dolly and the Sleepy Star</div>
+                      <div class="story-sub">6 pages · EN</div>
+                      <div class="audio-badge">Audio</div>
+                    </div>
+                    <div class="badge">3-7</div>
+                  </div>
+                </div>
+
+                <div class="story-card">
+                  <div class="story-cover lighter"></div>
+                  <div class="story-meta">
+                    <div>
+                      <div class="story-title">Verity's Lantern Walk</div>
+                      <div class="story-sub">5 pages · EN</div>
+                    </div>
+                    <div class="badge">3-7</div>
+                  </div>
+                </div>
+
+                <div class="story-card">
+                  <div class="story-cover lighter"></div>
+                  <div class="story-meta">
+                    <div>
+                      <div class="story-title">Glowmoth Finds a Ribbon</div>
+                      <div class="story-sub">6 pages · EN</div>
+                      <div class="audio-badge">Audio</div>
+                    </div>
+                    <div class="badge">3-7</div>
+                  </div>
+                </div>
+
+                <div class="story-card">
+                  <div class="story-cover"></div>
+                  <div class="story-meta">
+                    <div>
+                      <div class="story-title">The Softest Goodnight</div>
+                      <div class="story-sub">5 pages · EN</div>
+                    </div>
+                    <div class="badge">3-7</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="bottom-nav">
+                <span>Home</span>
+                <span class="active">Library</span>
+                <span>Continue</span>
+                <span>Settings</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-reader">
+        <div class="concept-copy">
+          <div class="eyebrow">Concept 3</div>
+          <h2>Reader that gets out of the way and lets the story breathe</h2>
+          <p>
+            The reader is already strong. This concept pushes it further by shrinking the top chrome, keeping narration controls
+            compact, and visually prioritising the illustrated page and story text over everything else.
+          </p>
+          <div class="summary">
+            <strong>Why this helps</strong>
+            The story becomes the focal point. Parents still keep orientation and controls, but the reader feels more premium, less busy,
+            and better suited to longer reading sessions.
+          </div>
+          <div class="feature-list">
+            <div class="feature">
+              <strong>Smaller floating top bar</strong>
+              <span>Back, title, and progress stay available, but the top card no longer dominates the reading space.</span>
+            </div>
+            <div class="feature">
+              <strong>Compact narration controls</strong>
+              <span>Only the two essential buttons sit below the page, which keeps the reading flow calm and obvious.</span>
+            </div>
+            <div class="feature">
+              <strong>Continuous page rhythm</strong>
+              <span>The next page starts to peek below, making vertical reading feel intentional and inviting.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="device-stage">
+          <div class="phone">
+            <div class="screen">
+              <div class="status-row">
+                <span>9:41</span>
+                <span>Wi-Fi 100%</span>
+              </div>
+
+              <div class="reader-top">
+                <div class="title-group">
+                  <strong>Reader</strong>
+                  <span>Glowmoth and the Lantern Ribbon</span>
+                </div>
+                <div class="badge">2 / 6</div>
+              </div>
+
+              <div class="reader-card">
+                <div class="reader-illustration"></div>
+                <div class="reader-text">
+                  <p>
+                    Glowmoth hovered near the little ribbon and tipped her head. The moonlit glow on the path made it shimmer, but
+                    Daphne could see at once that this one mattered.
+                  </p>
+                </div>
+              </div>
+
+              <div class="progress-card">
+                <strong style="font-size:13px;color:var(--text);display:block;">Reading progress</strong>
+                <span style="font-size:12px;color:var(--muted);">A quieter, slimmer progress treatment that can scroll away.</span>
+                <div class="progress-bar"><span></span></div>
+              </div>
+
+              <div class="audio-row">
+                <div class="btn-secondary">Narration on</div>
+                <div class="btn-primary">Play</div>
+              </div>
+
+              <div class="ghost-note">
+                The top card here is intentionally much smaller than the current reader header. It disappears while scrolling, then
+                returns when the reader needs orientation again.
+              </div>
+
+              <div class="reader-card" style="margin-top:16px; opacity:0.66;">
+                <div class="reader-illustration" style="height:160px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <p class="footer-note">
+      Next step if you like this direction: I can turn the chosen concept into a staged implementation plan, starting with the
+      signed-in app shell, the library redesign, or the reader polish.
+    </p>
+  </div>
+
+  <script>
+    const tabs = document.querySelectorAll(".tab");
+    const panels = {
+      shell: document.getElementById("panel-shell"),
+      library: document.getElementById("panel-library"),
+      reader: document.getElementById("panel-reader"),
+    };
+
+    tabs.forEach((tab) => {
+      tab.addEventListener("click", () => {
+        const key = tab.dataset.panel;
+        tabs.forEach((item) => item.classList.toggle("active", item === tab));
+        Object.entries(panels).forEach(([panelKey, panel]) => {
+          panel.classList.toggle("active", panelKey === key);
+        });
+      });
+    });
+  </script>
+</body>
+</html>
