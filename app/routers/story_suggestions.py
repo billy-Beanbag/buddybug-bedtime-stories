@@ -18,7 +18,11 @@ from app.services.content_lane_service import validate_content_lane_key
 from app.services.i18n_service import validate_language_code
 from app.services.review_service import utc_now
 from app.services.subscription_service import has_premium_access
+from app.services.story_engine_data import BEDTIME_MODE, STANDARD_MODE
+from app.services.story_idea_generator import CANONICAL_CHARACTER_ORDER
+from app.services.story_idea_llm import try_normalize_parent_suggestion_to_idea_payload
 from app.utils.dependencies import get_current_active_user, get_current_editor_user
+from app.utils.seed_content_lanes import STORY_ADVENTURES_3_7_LANE_KEY
 
 ALLOWED_STORY_SUGGESTION_STATUSES = {"submitted", "in_review", "approved", "archived"}
 
@@ -98,6 +102,23 @@ def _build_promoted_story_idea(
     child_profile: ChildProfile | None,
 ) -> StoryIdea:
     lane = validate_content_lane_key(session, age_band=suggestion.age_band, content_lane_key=None)
+    resolved_tone = "warm, grounded, child-led"
+    mode = STANDARD_MODE if lane.key == STORY_ADVENTURES_3_7_LANE_KEY else BEDTIME_MODE
+    llm_payload = try_normalize_parent_suggestion_to_idea_payload(
+        title=suggestion.title,
+        brief=suggestion.brief,
+        desired_outcome=suggestion.desired_outcome,
+        inspiration_notes=suggestion.inspiration_notes,
+        avoid_notes=suggestion.avoid_notes,
+        age_band=lane.age_band,
+        content_lane_key=lane.key,
+        resolved_tone=resolved_tone,
+        mode=mode,
+        available_characters=list(CANONICAL_CHARACTER_ORDER),
+    )
+    if llm_payload is not None:
+        return StoryIdea(**llm_payload)
+
     goal = (suggestion.desired_outcome or "").strip()
     include_notes = (suggestion.inspiration_notes or "").strip()
     combined_notes = " ".join(
@@ -152,8 +173,12 @@ def _build_promoted_story_idea(
         theme = "problem solving"
 
     bedtime_feeling = goal or "proud, reassured, and calm"
-    main_characters = "Buddybug"
-    supporting_characters = "Verity"
+    if hook_type in {"clever_shortcut", "accidental_mess", "helpful_plan_goes_wrong", "silly_competition"}:
+        main_characters = "Daphne, Dolly"
+        supporting_characters = "Verity, Buddybug"
+    else:
+        main_characters = "Buddybug, Dolly"
+        supporting_characters = "Glowmoth, Verity"
 
     return StoryIdea(
         title=_derive_story_idea_title(suggestion),
@@ -161,7 +186,7 @@ def _build_promoted_story_idea(
         hook_type=hook_type,
         age_band=lane.age_band,
         content_lane_key=lane.key,
-        tone="warm, grounded, child-led",
+        tone=resolved_tone,
         setting=setting,
         theme=theme,
         bedtime_feeling=bedtime_feeling,
@@ -323,6 +348,8 @@ def promote_story_suggestion_to_idea(
             "bedtime_feeling",
             "main_characters",
             "supporting_characters",
+            "series_key",
+            "series_title",
             "estimated_minutes",
             "generation_source",
         ):

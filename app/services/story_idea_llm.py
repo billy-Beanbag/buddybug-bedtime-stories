@@ -14,6 +14,7 @@ from app.config import (
     STORY_GENERATION_API_KEY,
     STORY_GENERATION_BASE_URL,
     STORY_GENERATION_DEBUG,
+    STORY_IDEA_GENERATION_USE_LLM,
     STORY_GENERATION_MODEL,
     STORY_GENERATION_TIMEOUT_SECONDS,
 )
@@ -298,3 +299,149 @@ def try_generate_llm_idea_payloads(
     if out:
         logger.info("story_idea_llm: parsed %s ideas (requested %s)", len(out), count)
     return out[:count] if out else None
+
+
+def try_normalize_parent_suggestion_to_idea_payload(
+    *,
+    title: str | None,
+    brief: str,
+    desired_outcome: str | None,
+    inspiration_notes: str | None,
+    avoid_notes: str | None,
+    age_band: str,
+    content_lane_key: str,
+    resolved_tone: str,
+    mode: str,
+    available_characters: list[str],
+) -> dict[str, Any] | None:
+    """Convert one approved parent suggestion into a structured StoryIdea-like payload."""
+    if (
+        not STORY_IDEA_GENERATION_USE_LLM
+        or not STORY_GENERATION_API_KEY.strip()
+        or not STORY_GENERATION_MODEL.strip()
+    ):
+        return None
+
+    allowed_hooks = BEDTIME_ALLOWED_HOOK_KEYS if mode == BEDTIME_MODE else STANDARD_ALLOWED_HOOK_KEYS
+    chars = ", ".join(available_characters) if available_characters else "Verity, Dolly, Daphne, Buddybug"
+    mode_label = "bedtime" if mode == BEDTIME_MODE else "adventure"
+    system = (
+        "You output only compact JSON for a children's book editorial tool. "
+        "No markdown fences, no commentary before or after the JSON object."
+    )
+    user = "\n".join(
+        [
+            "Convert this approved parent suggestion into ONE structured Buddybug story idea.",
+            f"Age band: {age_band}. Content lane key: {content_lane_key}. Mode: {mode_label}.",
+            f"Tone: {resolved_tone}.",
+            "",
+            "The output must preserve the parent's concrete scenario, but normalize it into fields a writer can use.",
+            "Do not produce abstract filler, placeholder language, or meta-writing phrasing.",
+            "Do not use the submitting child's name as a story character unless it already matches the canonical Buddybug roster.",
+            f"Only use names from this roster: {chars}.",
+            f"hook_type must be one of: {', '.join(allowed_hooks)}.",
+            "",
+            "Field rules:",
+            "- title: short, vivid, publishable Buddybug-style title",
+            "- premise: one or two concrete sentences grounded in the parent's scenario",
+            "- setting: short place phrase only",
+            "- theme: short emotional/theme phrase only",
+            "- bedtime_feeling: short ending feeling phrase only",
+            "- main_characters: one or two roster names, comma-separated",
+            "- supporting_characters: zero to three roster names, comma-separated, excluding main characters",
+            "",
+            "Parent suggestion:",
+            f"- title: {(title or '').strip() or '(none)'}",
+            f"- brief: {brief.strip()}",
+            f"- desired_outcome: {(desired_outcome or '').strip() or '(none)'}",
+            f"- inspiration_notes: {(inspiration_notes or '').strip() or '(none)'}",
+            f"- avoid_notes: {(avoid_notes or '').strip() or '(none)'}",
+            "",
+            'Return ONLY valid JSON with this shape:',
+            '{"idea":{"title":"...","premise":"...","hook_type":"missing_item","setting":"...","theme":"...","bedtime_feeling":"...","main_characters":"Name, Name","supporting_characters":"Name"}}',
+        ]
+    )
+    url = STORY_GENERATION_BASE_URL.rstrip("/") + "/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {STORY_GENERATION_API_KEY}",
+        "Content-Type": "application/json",
+    }
+    base_body: dict[str, Any] = {
+        "model": STORY_GENERATION_MODEL,
+        "temperature": 0.45,
+        "max_tokens": 700,
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ],
+    }
+
+    try:
+        with httpx.Client(timeout=STORY_GENERATION_TIMEOUT_SECONDS) as client:
+            body = {**base_body, "response_format": {"type": "json_object"}}
+            response = client.post(url, headers=headers, json=body)
+            if response.status_code >= 400 and "response_format" in body:
+                response = client.post(url, headers=headers, json=base_body)
+            response.raise_for_status()
+            payload = response.json()
+    except Exception:
+        logger.exception("LLM parent suggestion normalization failed")
+        return None
+
+    text = _extract_chat_completion_text(payload)
+    if not text:
+        if STORY_GENERATION_DEBUG:
+            logger.warning("LLM parent suggestion normalization returned empty content")
+        return None
+
+    try:
+        data = json.loads(_strip_json_fences(text))
+    except json.JSONDecodeError:
+        logger.warning("LLM parent suggestion normalization returned non-JSON; first 200 chars: %s", text[:200])
+        return None
+
+    item = data.get("idea")
+    if not isinstance(item, dict):
+        return None
+
+    allowed_names = set(available_characters) if available_characters else {
+        "Verity",
+        "Dolly",
+        "Daphne",
+        "Buddybug",
+    }
+    parsed_title = str(item.get("title") or "").strip()
+    parsed_premise = str(item.get("premise") or "").strip()
+    if not parsed_title or not parsed_premise:
+        return None
+    mains = _split_characters(str(item.get("main_characters") or ""), allowed=allowed_names)
+    supports = _split_characters(str(item.get("supporting_characters") or ""), allowed=allowed_names)
+    if len(mains) < 1 and available_characters:
+        mains = [available_characters[0]]
+        if len(available_characters) > 1:
+            mains.append(available_characters[1])
+    if len(mains) < 1:
+        mains = ["Buddybug", "Dolly"]
+    if len(mains) > 2:
+        mains = mains[:2]
+    main_set = set(mains)
+    supports = [name for name in supports if name not in main_set][:3]
+    series_key, series_title = _series_for_characters(mains, supports)
+    return {
+        "title": parsed_title[:120],
+        "premise": parsed_premise[:500],
+        "hook_type": _normalize_hook(str(item.get("hook_type") or ""), mode=mode),
+        "age_band": age_band,
+        "content_lane_key": content_lane_key,
+        "tone": resolved_tone,
+        "setting": (str(item.get("setting") or "garden path").strip() or "garden path")[:200],
+        "theme": (str(item.get("theme") or "friendship").strip() or "friendship")[:120],
+        "bedtime_feeling": (str(item.get("bedtime_feeling") or "proud, reassured, and calm").strip() or "proud, reassured, and calm")[:120],
+        "main_characters": ", ".join(mains),
+        "supporting_characters": ", ".join(supports) if supports else None,
+        "series_key": series_key,
+        "series_title": series_title,
+        "estimated_minutes": 7 if mode == BEDTIME_MODE else 6,
+        "status": "idea_pending",
+        "generation_source": "parent_suggestion_llm",
+    }
