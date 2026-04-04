@@ -4,7 +4,7 @@ from fastapi import APIRouter, Body, Depends, HTTPException, Query, Response, st
 from sqlmodel import Session, select
 
 from app.database import get_session
-from app.models import Character, StoryIdea
+from app.models import Character, StoryBrief, StoryDraft, StoryIdea, StorySuggestion
 from app.schemas.story_schema import (
     IdeaGenerationSummary,
     StoryIdeaBatchGenerateResponse,
@@ -208,6 +208,16 @@ def update_story_idea(
 )
 def delete_story_idea(idea_id: int, session: Session = Depends(get_session)) -> Response:
     story_idea = _get_story_idea_or_404(session, idea_id)
+    for draft in session.exec(select(StoryDraft).where(StoryDraft.story_idea_id == idea_id)).all():
+        draft.story_idea_id = None
+        draft.updated_at = _utc_now()
+        session.add(draft)
+    for suggestion in session.exec(select(StorySuggestion).where(StorySuggestion.promoted_story_idea_id == idea_id)).all():
+        suggestion.promoted_story_idea_id = None
+        suggestion.updated_at = _utc_now()
+        session.add(suggestion)
+    for brief in session.exec(select(StoryBrief).where(StoryBrief.story_idea_id == idea_id)).all():
+        session.delete(brief)
     session.delete(story_idea)
     session.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
