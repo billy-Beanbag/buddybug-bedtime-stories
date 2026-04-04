@@ -216,7 +216,61 @@ export default function LibraryPage() {
           : `No published ${selectedAgeBand} stories are available yet.`;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
+      <section className="rounded-[2rem] border border-white/70 bg-white/82 p-5 shadow-sm backdrop-blur">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-2xl">
+            <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Library</h1>
+            <p className="mt-2 text-sm text-slate-600">{t("libraryDescription")}</p>
+          </div>
+          {selectedChildProfile ? (
+            <p className="inline-flex rounded-full border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-900">
+              For {selectedChildProfile.display_name} • {selectedChildProfile.age_band} •{" "}
+              {selectedChildProfile.language.toUpperCase()}
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {allowedAgeOptions.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setSelectedAgeBand(option)}
+                  className={`rounded-full px-3 py-2 text-sm font-medium ${
+                    selectedAgeBand === option
+                      ? "bg-slate-900 text-white"
+                      : "border border-slate-200 bg-white text-slate-700"
+                  }`}
+                >
+                  {option === "all" ? "All ages" : option}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="mt-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Choose your story route</p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-3">
+            {LIBRARY_ROUTE_OPTIONS.map((route) => (
+              <button
+                key={route.key}
+                type="button"
+                onClick={() => setSelectedRoute(route.key)}
+                className={`rounded-[1.4rem] border px-4 py-3 text-left transition ${
+                  selectedRoute === route.key
+                    ? "border-indigo-600 bg-[linear-gradient(135deg,#4338ca_0%,#5b21b6_100%)] text-white shadow-[0_18px_38px_rgba(79,70,229,0.2)]"
+                    : "border-slate-200 bg-slate-50/80 text-slate-900 hover:bg-slate-100"
+                }`}
+              >
+                <div className="text-sm font-semibold">{route.label}</div>
+                <div className={`mt-1 text-xs ${selectedRoute === route.key ? "text-indigo-100" : "text-slate-600"}`}>
+                  {route.description}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {routeFilteredRecommended.length ? (
         <section className="space-y-3">
           <div>
@@ -246,84 +300,19 @@ export default function LibraryPage() {
         </section>
       ) : null}
 
-      <div>
+      <section className="space-y-2">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-2xl font-semibold text-slate-900">{t("libraryTitle")}</h2>
+          <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600">
+            {books.length} available
+          </span>
         </div>
-        <p className="mt-1 text-sm text-slate-600">
-          {t("libraryDescription")}
-        </p>
-        <div className="mt-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Choose your story route</p>
-          <div className="mt-3 grid gap-2 sm:grid-cols-3">
-            {LIBRARY_ROUTE_OPTIONS.map((route) => (
-              <button
-                key={route.key}
-                type="button"
-                onClick={() => setSelectedRoute(route.key)}
-                className={`rounded-2xl border px-4 py-3 text-left transition ${
-                  selectedRoute === route.key
-                    ? "border-slate-900 bg-slate-900 text-white"
-                    : "border-slate-200 bg-slate-50 text-slate-900 hover:bg-slate-100"
-                }`}
-              >
-                <div className="text-sm font-semibold">{route.label}</div>
-                <div className={`mt-1 text-xs ${selectedRoute === route.key ? "text-slate-200" : "text-slate-600"}`}>
-                  {route.description}
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-        {isAuthenticated ? (
-          <div className="mt-4 rounded-3xl border border-indigo-200 bg-[linear-gradient(135deg,rgba(238,242,255,0.96),rgba(245,243,255,0.96))] p-4 shadow-sm">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">New</p>
-                <h3 className="mt-1 text-lg font-semibold text-slate-900">Suggest a future story</h3>
-                <p className="mt-1 text-sm text-slate-600">
-                  Share a brief outline, lesson, or bedtime scenario you want Buddybug to learn from for future editorial
-                  guidance.
-                </p>
-              </div>
-              <Link
-                href="/story-suggestions"
-                className="rounded-2xl bg-[linear-gradient(135deg,#4338ca_0%,#5b21b6_100%)] px-4 py-3 text-sm font-medium !text-white no-underline shadow-[0_16px_36px_rgba(79,70,229,0.18)] visited:!text-white hover:!text-white focus:!text-white active:!text-white"
-              >
-                Open story suggestions
-              </Link>
-            </div>
-          </div>
-        ) : null}
-        {selectedChildProfile ? (
-          <p className="mt-3 inline-flex rounded-full border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-900">
-            For {selectedChildProfile.display_name} • {selectedChildProfile.age_band} •{" "}
-            {selectedChildProfile.language.toUpperCase()}
-          </p>
-        ) : (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {allowedAgeOptions.map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() => setSelectedAgeBand(option)}
-                className={`rounded-full px-3 py-2 text-sm font-medium ${
-                  selectedAgeBand === option
-                    ? "bg-slate-900 text-white"
-                    : "border border-slate-200 bg-white text-slate-700"
-                }`}
-              >
-                {option === "all" ? "All ages" : option}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+      </section>
 
       {!books.length ? (
         <EmptyState title={emptyStateTitle} description={emptyStateDescription} />
       ) : (
-        <div className="grid gap-4">
+        <div className="grid gap-4 md:grid-cols-2">
           {books.map((book) => (
             <BookCard
               key={book.book_id}
@@ -338,6 +327,27 @@ export default function LibraryPage() {
           ))}
         </div>
       )}
+
+      {isAuthenticated ? (
+        <section className="rounded-[2rem] border border-indigo-200 bg-[linear-gradient(135deg,rgba(238,242,255,0.96),rgba(245,243,255,0.96))] p-5 shadow-sm">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="max-w-2xl">
+              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">New</p>
+              <h3 className="mt-1 text-lg font-semibold text-slate-900">Suggest a future story</h3>
+              <p className="mt-1 text-sm text-slate-600">
+                Share a brief outline, lesson, or bedtime scenario you want Buddybug to learn from for future editorial
+                guidance.
+              </p>
+            </div>
+            <Link
+              href="/story-suggestions"
+              className="rounded-2xl bg-[linear-gradient(135deg,#4338ca_0%,#5b21b6_100%)] px-4 py-3 text-sm font-medium !text-white no-underline shadow-[0_16px_36px_rgba(79,70,229,0.18)] visited:!text-white hover:!text-white focus:!text-white active:!text-white"
+            >
+              Open story suggestions
+            </Link>
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

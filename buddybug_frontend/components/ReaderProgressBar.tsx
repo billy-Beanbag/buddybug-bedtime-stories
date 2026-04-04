@@ -11,14 +11,14 @@ export function ReaderProgressBar({
   const progress = Math.min((currentPageNumber / safeTotal) * 100, 100);
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between text-sm text-slate-600">
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between text-xs font-medium text-slate-500 sm:text-sm">
         <span>
           Page {currentPageNumber} of {totalPageNumber}
         </span>
         <span>{Math.round(progress)}%</span>
       </div>
-      <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+      <div className="h-1.5 overflow-hidden rounded-full bg-slate-200">
         <div
           className="h-full rounded-full bg-indigo-500 transition-all"
           style={{ width: `${progress}%` }}

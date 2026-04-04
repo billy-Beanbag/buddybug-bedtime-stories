@@ -1233,8 +1233,8 @@ function ReaderPageContent() {
         <header
           className={
             usePagedPreviewReview
-              ? "rounded-[1.75rem] border border-white/70 bg-white/92 px-4 py-3 shadow-sm"
-              : `sticky top-2 z-20 rounded-[1.75rem] border border-white/70 bg-white/88 px-4 py-3 shadow-sm backdrop-blur transition duration-200 ${
+              ? "rounded-[1.5rem] border border-white/70 bg-white/92 px-3 py-3 shadow-sm sm:px-4"
+              : `sticky top-2 z-20 rounded-[1.5rem] border border-white/70 bg-white/88 px-3 py-3 shadow-sm backdrop-blur transition duration-200 sm:px-4 ${
                   isHeaderVisible
                     ? "translate-y-0 opacity-100"
                     : "pointer-events-none -translate-y-[calc(100%+0.75rem)] opacity-0"
@@ -1248,15 +1248,16 @@ function ReaderPageContent() {
             >
               {isPreviewMode ? "Back to workflow" : t("backToLibrary")}
             </Link>
-            <p className="text-sm font-medium text-slate-600">
-              {currentPage.page_number} / {lastPageNumber}
-            </p>
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-medium text-slate-700">
+              <span>{currentPage.page_number === 0 ? "Cover" : `Page ${currentPage.page_number}`}</span>
+              <span className="text-slate-400">/</span>
+              <span>{lastPageNumber}</span>
+            </div>
           </div>
 
           <div className="mt-3 min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{t("readerLabel")}</p>
-            <h2 className="mt-1 text-lg font-semibold text-slate-900 sm:text-xl">{book.title}</h2>
-            <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[13px] sm:text-sm">
+            <h2 className="text-lg font-semibold text-slate-900 sm:text-xl">{book.title}</h2>
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] sm:text-sm">
               {readerAccess ? (
                 <span className="text-slate-600">
                   {usingOfflinePackage
@@ -1271,14 +1272,11 @@ function ReaderPageContent() {
                   Reading for {selectedChildProfile.display_name} in {selectedChildProfile.language.toUpperCase()}
                 </span>
               ) : null}
+              <BedtimeModeBadge active={Boolean(resolvedControls?.bedtime_mode_enabled)} />
             </div>
           </div>
 
-          <div className="mt-2.5 flex flex-wrap items-center gap-2">
-            <BedtimeModeBadge active={Boolean(resolvedControls?.bedtime_mode_enabled)} />
-          </div>
-
-          <div className="mt-2.5">
+          <div className="mt-3">
             <ReaderProgressBar currentPageNumber={currentPage.page_number} totalPageNumber={lastPageNumber} />
           </div>
         </header>

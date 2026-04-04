@@ -15,7 +15,7 @@ export function HomeHeader() {
     () => [
       { href: "/", label: "Home" },
       { href: "/library", label: "Library" },
-      { href: "/children", label: "Children" },
+      { href: "/children", label: "Family" },
       { href: "/bedtime-pack", label: "Bedtime Pack" },
       isAuthenticated ? { href: "/upgrade", label: "Upgrade" } : { href: "/pricing", label: "Pricing" },
     ],

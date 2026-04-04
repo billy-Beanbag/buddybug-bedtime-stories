@@ -97,12 +97,12 @@ function shouldShowBack(pathname: string) {
   );
 }
 
-const PRIMARY_NAV_ITEMS = [
-  { href: "/", label: "Home" },
-  { href: "/library", label: "Library" },
+const MENU_NAV_ITEMS = [
   { href: "/children", label: "Family" },
-  { href: "/continue-reading", label: "Continue" },
-  { href: "/settings", label: "Settings" },
+  { href: "/profile", label: "Profile" },
+  { href: "/bedtime-pack", label: "Bedtime Pack" },
+  { href: "/story-suggestions", label: "Story Suggestions" },
+  { href: "/support", label: "Support" },
 ];
 
 export function AppTopBar() {
@@ -117,7 +117,7 @@ export function AppTopBar() {
   }, [pathname]);
 
   return (
-    <header className="mb-5 rounded-[2rem] border border-white/70 bg-white/80 px-4 py-3 shadow-sm backdrop-blur supports-[padding:max(0px)]:pt-[max(0.75rem,env(safe-area-inset-top))]">
+    <header className="mb-5 rounded-[1.75rem] border border-white/70 bg-white/84 px-4 py-3 shadow-sm backdrop-blur supports-[padding:max(0px)]:pt-[max(0.75rem,env(safe-area-inset-top))]">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
@@ -134,8 +134,8 @@ export function AppTopBar() {
               </button>
             ) : null}
             <div>
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{APP_NAME}</p>
-              <h1 className="truncate text-lg font-semibold text-slate-900">{getScreenTitle(pathname)}</h1>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">{APP_NAME}</p>
+              <h1 className="truncate text-base font-semibold text-slate-900 sm:text-lg">{getScreenTitle(pathname)}</h1>
             </div>
           </div>
         </div>
@@ -154,10 +154,21 @@ export function AppTopBar() {
         </button>
       </div>
 
+      {isAuthenticated ? (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200/80 pt-3">
+          <p className="rounded-full border border-indigo-100 bg-indigo-50/80 px-3 py-1.5 text-xs font-semibold text-indigo-800">
+            Reading profile
+          </p>
+          <div className="min-w-[220px] max-w-sm flex-1">
+            <ChildProfileSwitcher />
+          </div>
+        </div>
+      ) : null}
+
       {menuOpen ? (
         <div className="mt-4 space-y-4 border-t border-slate-200 pt-4">
           <nav className="grid gap-2">
-            {PRIMARY_NAV_ITEMS.map((item) => {
+            {MENU_NAV_ITEMS.map((item) => {
               const isActive =
                 item.href === "/"
                   ? pathname === item.href
@@ -181,7 +192,7 @@ export function AppTopBar() {
             })}
           </nav>
 
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3">
             <label className="text-xs text-slate-600">
               <span className="mb-1 block">{t("languageLabel")}</span>
               <select
@@ -203,12 +214,6 @@ export function AppTopBar() {
                 ))}
               </select>
             </label>
-
-            {isAuthenticated ? (
-              <div className="min-w-0">
-                <ChildProfileSwitcher />
-              </div>
-            ) : null}
           </div>
         </div>
       ) : null}

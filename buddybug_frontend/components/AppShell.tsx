@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
 
 import { AppTopBar } from "@/components/AppTopBar";
+import { BottomNav } from "@/components/BottomNav";
 import { InstallAppPrompt } from "@/components/InstallAppPrompt";
 import { MarketingFooter } from "@/components/marketing/MarketingFooter";
 import { MarketingHeader } from "@/components/marketing/MarketingHeader";
@@ -63,12 +64,13 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.95),_rgba(238,242,255,0.9)_45%,_rgba(224,231,255,0.85))] text-slate-900">
-      <div className="mx-auto min-h-screen max-w-md px-4 pb-6 pt-4">
+      <div className="mx-auto min-h-screen max-w-4xl px-4 pb-28 pt-4 sm:px-6 lg:px-8">
         <InstallAppPrompt />
         <OfflineStatusBanner />
         {!isOnboardingRoute && !isLoginRoute && !isRegisterRoute && !isGettingStartedRoute ? <AppTopBar /> : null}
         <main className="pb-2">{children}</main>
       </div>
+      {!isOnboardingRoute && !isLoginRoute && !isRegisterRoute && !isGettingStartedRoute ? <BottomNav /> : null}
     </div>
   );
 }
