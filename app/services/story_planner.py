@@ -126,9 +126,30 @@ def _clue_for_setting(setting: str) -> str:
         return "a loose thread caught near the rocking chair"
     if "garden" in lowered or "path" in lowered:
         return "odd little marks by the path"
+    if "zoo" in lowered and "picnic" in lowered:
+        return "a line of very large damp footprints pressed into the picnic grass beside the basket"
+    if "picnic" in lowered:
+        return "crumbs, bent grass, and one enormous footprint beside the checked cloth"
+    if "zoo" in lowered:
+        return "a trail of straw and large round footprints leading away from the rail"
+    if "kitchen" in lowered:
+        return "a floury pawprint beside the mixing bowl"
     if "reading nook" in lowered:
         return "a folded note tucked into the wrong book"
     return "a curious clue in the wrong place"
+
+
+def _discovery_clue_for_idea(idea: StoryIdea) -> str:
+    source_text = " ".join(part for part in (idea.title, idea.premise, idea.theme, idea.setting) if part).casefold()
+    if "elephant" in source_text and "picnic" in source_text:
+        return "a line of very large damp footprints pressed into the picnic grass beside the basket"
+    if "picnic" in source_text and any(token in source_text for token in ("crumb", "basket", "blanket", "cloth")):
+        return "crumbs, bent grass, and one odd mark beside the picnic basket"
+    if "zoo" in source_text:
+        return "a trail of straw and large round footprints leading away from the rail"
+    if "kitchen" in source_text and any(token in source_text for token in ("bowl", "flour", "batter", "spoon")):
+        return "a floury pawprint beside the mixing bowl"
+    return _clue_for_setting(idea.setting)
 
 
 def _plan_task_for_setting(setting: str) -> tuple[str, str]:
@@ -366,7 +387,7 @@ def build_story_outline(idea: StoryIdea) -> StoryOutline:
             resolution = f"{helper} changed the rules, {calmer} called it a shared win, and the competition ended much more kindly than it began."
             gentle_ending = f"They walked away rosy-cheeked and {idea.bedtime_feeling}, still talking about the funniest moment."
     elif hook_type == "unexpected_discovery":
-        clue = _clue_for_setting(setting)
+        clue = _discovery_clue_for_idea(idea)
         opening_hook = f"{lead} noticed {clue} in the {setting}, even though it had definitely not been there before."
         problem = f"The strange clue made everyone curious, and they had to decide whether it meant trouble, a mistake, or a surprise."
         event = f"{helper} followed the trail carefully while {second} checked the places that seemed most likely to hold the answer."
