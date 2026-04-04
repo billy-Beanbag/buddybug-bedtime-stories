@@ -30,7 +30,10 @@ STYLE_SUFFIX = (
 )
 
 LOCATION_KEYWORDS = {
-    "moonlit garden": ["garden", "petal", "moonlight", "grass", "flowers", "glow in the grass"],
+    "zoo picnic lawn": ["zoo", "picnic", "basket", "checked cloth", "picnic grass", "footprints", "elephant", "rail"],
+    "family kitchen": ["kitchen", "mix", "mixing bowl", "bowl", "flour", "oven", "bake", "baking", "muffin", "bread", "blueberries", "wooden spoon", "table"],
+    "library reading nook": ["library reading nook", "library", "bookshelf", "book basket", "cushions", "soft rug", "stacked books"],
+    "moonlit garden": ["moonlit garden", "moonlight", "glowing path", "lantern", "lanterns", "petals", "soft shrubs"],
     "cozy bedroom": ["bed", "blanket", "pillows", "bedroom", "room", "lantern", "nightgown"],
     "breakfast kitchen": ["kitchen", "mix", "mixing bowl", "bowl", "flour", "oven", "bake", "baking", "muffin", "bread", "blueberries", "wooden spoon", "table"],
     "quiet forest": ["forest", "trees", "leaves", "branch", "path through the woods"],
@@ -72,7 +75,10 @@ OBJECT_KEYWORDS = {
 }
 
 LOCATION_REQUIRED_PROPS = {
+    "zoo picnic lawn": ("picnic basket", "checked picnic cloth", "open grass", "zoo rail or animal-area cue"),
+    "family kitchen": ("mixing bowl", "wooden spoon", "kitchen table or worktop", "baking ingredients"),
     "breakfast kitchen": ("mixing bowl", "wooden spoon", "kitchen table or worktop", "baking ingredients"),
+    "library reading nook": ("stacked books", "soft rug", "cushions", "low shelf or book basket"),
     "cozy bedroom": ("bed", "pillows", "blanket", "bedside or bedroom furniture"),
     "reading nook": ("stacked books", "soft rug", "cushions", "low shelf or book basket"),
     "moonlit garden": ("flowers", "garden greenery", "path or open grass"),
@@ -80,6 +86,19 @@ LOCATION_REQUIRED_PROPS = {
 }
 
 LOCATION_NEGATIVE_ELEMENTS = {
+    "zoo picnic lawn": (
+        "do not turn the scene into a moonlit garden",
+        "do not add glowing garden paths or bedtime lantern trails unless the text clearly asks for them",
+        "do not replace the picnic lawn with a bedroom or generic magical garden",
+    ),
+    "family kitchen": (
+        "do not place the scene outdoors in a garden",
+        "do not add glowing garden paths, lantern trails, or flower beds as the main setting",
+        "do not place the scene on a bed",
+        "do not show bedroom pillows or blankets as the main setting",
+        "do not use a nursery or bedtime bedroom composition",
+        "do not replace the kitchen with a generic cozy room",
+    ),
     "breakfast kitchen": (
         "do not place the scene on a bed",
         "do not show bedroom pillows or blankets as the main setting",
@@ -93,6 +112,14 @@ LOCATION_NEGATIVE_ELEMENTS = {
     "reading nook": (
         "do not place the scene on a bed unless the text clearly says so",
         "do not replace the nook with a kitchen or dining room",
+    ),
+    "library reading nook": (
+        "do not place the scene on a bed unless the text clearly says so",
+        "do not replace the library nook with a kitchen, garden, or dining room",
+    ),
+    "moonlit garden": (
+        "do not use this location unless the page text clearly supports a moonlit outdoor garden scene",
+        "do not add beds, kitchen worktops, or indoor reading nooks as the main setting",
     ),
 }
 
