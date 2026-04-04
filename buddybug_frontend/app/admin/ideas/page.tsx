@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { EmptyState } from "@/components/EmptyState";
 import { LoadingState } from "@/components/LoadingState";
 import { useAuth } from "@/context/AuthContext";
-import { apiGet, apiPatch, apiPost } from "@/lib/api";
+import { apiDelete, apiGet, apiPatch, apiPost } from "@/lib/api";
 import { ADMIN_PRIMARY_BUTTON } from "@/lib/admin-styles";
 import type { AdminStoryIdeaSummary, StoryIdeaBatchGenerateResponse } from "@/lib/types";
 
@@ -133,6 +133,21 @@ export default function AdminIdeasPage() {
     }
   }
 
+  async function handleDeleteIdea(ideaId: number, ideaTitle: string) {
+    if (!token) return;
+    const confirmed = window.confirm(`Delete "${ideaTitle}" from the ideas queue? This cannot be undone.`);
+    if (!confirmed) return;
+    setMessage(null);
+    setError(null);
+    try {
+      await apiDelete(`/story-ideas/${ideaId}`, { token });
+      setMessage("Idea deleted.");
+      await loadIdeas();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to delete idea");
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -243,15 +258,31 @@ export default function AdminIdeasPage() {
                       >
                         Reject
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleDeleteIdea(idea.id, idea.title)}
+                        className="rounded-2xl border border-rose-200 bg-white px-4 py-2 text-sm font-medium text-rose-700"
+                      >
+                        Delete
+                      </button>
                     </>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => void handleResetIdea(idea.id)}
-                      className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-medium text-slate-800"
-                    >
-                      Reset to pending
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => void handleResetIdea(idea.id)}
+                        className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-medium text-slate-800"
+                      >
+                        Reset to pending
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleDeleteIdea(idea.id, idea.title)}
+                        className="rounded-2xl border border-rose-200 bg-white px-4 py-2 text-sm font-medium text-rose-700"
+                      >
+                        Delete
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
