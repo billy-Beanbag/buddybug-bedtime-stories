@@ -603,6 +603,8 @@ def build_story_brief(
         target_age_band=metadata.target_age_band,
         hook_type=metadata.hook_type,
         tone=metadata.tone,
+        source_title=idea.title,
+        source_premise=idea.premise,
         theme=metadata.theme,
         setting=metadata.setting,
         bedtime_feeling=metadata.bedtime_feeling,

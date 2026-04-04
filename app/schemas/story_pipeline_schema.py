@@ -38,6 +38,8 @@ class StoryBrief(BaseModel):
     target_age_band: str
     hook_type: str
     tone: str
+    source_title: str | None = None
+    source_premise: str = ""
     theme: str
     setting: str
     bedtime_feeling: str
