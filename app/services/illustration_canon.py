@@ -151,6 +151,13 @@ LOCATION_VISUAL_CANON: dict[str, LocationVisualCanon] = {
         lighting="warm morning or afternoon house light",
         recurring_props=("mixing bowl", "wooden spoon", "blueberries", "flour dust"),
     ),
+    "family living room": LocationVisualCanon(
+        key="family living room",
+        label="Verity's living room",
+        visual_description="a cozy family living room with sofa, rug, chairs, coffee table, and clear homemade fort-building details",
+        lighting="warm indoor evening family-room light with soft cozy clarity",
+        recurring_props=("sofa", "blanket fort", "cushions", "rug"),
+    ),
     "zoo picnic lawn": LocationVisualCanon(
         key="zoo picnic lawn",
         label="Zoo picnic lawn",

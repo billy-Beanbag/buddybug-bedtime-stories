@@ -32,6 +32,7 @@ STYLE_SUFFIX = (
 LOCATION_KEYWORDS = {
     "zoo picnic lawn": ["zoo", "picnic", "basket", "checked cloth", "picnic grass", "footprints", "elephant", "rail"],
     "family kitchen": ["kitchen", "mix", "mixing bowl", "bowl", "flour", "oven", "bake", "baking", "muffin", "bread", "blueberries", "wooden spoon", "table"],
+    "family living room": ["living room", "sitting room", "sofa", "couch", "armchair", "coffee table", "hearth", "fireplace", "blanket fort", "pillow fort", "fort", "forts", "den"],
     "library reading nook": ["library reading nook", "library", "bookshelf", "book basket", "cushions", "soft rug", "stacked books"],
     "moonlit garden": ["moonlit garden", "moonlight", "glowing path", "lantern", "lanterns", "petals", "soft shrubs"],
     "cozy bedroom": ["bed", "blanket", "pillows", "bedroom", "room", "lantern", "nightgown"],
@@ -59,6 +60,10 @@ MOOD_KEYWORDS = {
 OBJECT_KEYWORDS = {
     "storybook": ["book", "storybook", "pages"],
     "blanket": ["blanket", "quilt", "coverlet"],
+    "fort": ["fort", "forts", "blanket fort", "pillow fort", "homemade fort", "homemade forts", "den"],
+    "sofa": ["sofa", "couch", "armchair"],
+    "chair": ["chair", "chairs", "dining chair"],
+    "sheet": ["sheet", "sheets"],
     "basket": ["basket", "woven basket", "basket bed"],
     "mixing bowl": ["mixing bowl", "bowl of batter", "bowl"],
     "wooden spoon": ["wooden spoon", "spoon"],
@@ -77,6 +82,7 @@ OBJECT_KEYWORDS = {
 LOCATION_REQUIRED_PROPS = {
     "zoo picnic lawn": ("picnic basket", "checked picnic cloth", "open grass", "zoo rail or animal-area cue"),
     "family kitchen": ("mixing bowl", "wooden spoon", "kitchen table or worktop", "baking ingredients"),
+    "family living room": ("sofa or armchair", "blanket fort or cushion fort structure", "rug or coffee table", "indoor family room details"),
     "breakfast kitchen": ("mixing bowl", "wooden spoon", "kitchen table or worktop", "baking ingredients"),
     "library reading nook": ("stacked books", "soft rug", "cushions", "low shelf or book basket"),
     "cozy bedroom": ("bed", "pillows", "blanket", "bedside or bedroom furniture"),
@@ -98,6 +104,12 @@ LOCATION_NEGATIVE_ELEMENTS = {
         "do not show bedroom pillows or blankets as the main setting",
         "do not use a nursery or bedtime bedroom composition",
         "do not replace the kitchen with a generic cozy room",
+    ),
+    "family living room": (
+        "do not turn the scene into a bedroom",
+        "do not use a bed as the main set piece unless the page text clearly says so",
+        "do not replace the fort with bedtime pillows by a bed",
+        "do not move the scene outdoors into a moonlit garden",
     ),
     "breakfast kitchen": (
         "do not place the scene on a bed",
@@ -478,6 +490,9 @@ def _first_matching_object(page_text: str) -> str | None:
 def _select_visual_role(*, page_number: int, page_count: int, page_text: str, mood: str, location: str) -> str:
     lowered = page_text.casefold()
     lowered_location = location.casefold()
+    if "living room" in lowered_location:
+        if any(token in lowered for token in {"fort", "forts", "blanket fort", "pillow fort", "den", "sheet", "sofa", "couch"}):
+            return "gentle_pause"
     if any(token in lowered_location for token in {"kitchen", "reading nook"}):
         if any(token in lowered for token in {"mix", "bake", "bowl", "flour", "oven", "spoon", "books", "shelf", "stack"}):
             return "gentle_pause"
@@ -486,6 +501,8 @@ def _select_visual_role(*, page_number: int, page_count: int, page_text: str, mo
     if page_number == page_count:
         return "sleepy_settle"
     if any(token in lowered for token in {"blanket", "pillow", "pillows", "tucked", "cushion", "sleep"}):
+        if any(token in lowered for token in {"fort", "forts", "blanket fort", "pillow fort", "den"}) or "living room" in lowered_location:
+            return "gentle_pause"
         return "sleepy_settle"
     if any(token in lowered for token in {"kindness", "reassured", "shared glance", "kind word", "gentle hearts", "shine"}):
         return "reassuring_connection"
@@ -516,12 +533,12 @@ def _pick_anchor_prop(*, page_text: str, location: str, existing: list[str], rol
     lowered_candidates = {candidate.casefold(): candidate for candidate in candidates}
 
     preferred_groups = {
-        "opening_tableau": ("mixing bowl", "wooden spoon", "window", "glowing path", "path", "flowers", "lanterns", "books"),
+        "opening_tableau": ("fort", "sofa", "chair", "mixing bowl", "wooden spoon", "window", "glowing path", "path", "flowers", "lanterns", "books"),
         "magical_notice": ("glowing path", "window", "moon", "lanterns", "flowers"),
-        "listening_pause": ("mixing bowl", "wooden spoon", "flowers", "glowing path", "patchwork blanket", "pillows", "books"),
-        "reassuring_connection": ("mixing bowl", "wooden spoon", "patchwork blanket", "pillows", "flowers", "books", "blankets"),
+        "listening_pause": ("fort", "sofa", "chair", "mixing bowl", "wooden spoon", "flowers", "glowing path", "patchwork blanket", "pillows", "books"),
+        "reassuring_connection": ("fort", "sofa", "chair", "mixing bowl", "wooden spoon", "patchwork blanket", "pillows", "flowers", "books", "blankets"),
         "sleepy_settle": ("patchwork blanket", "blanket", "pillows", "basket bed", "cushions", "books"),
-        "gentle_pause": ("mixing bowl", "wooden spoon", "blueberries", "flour", "books", "flowers", "window", "path"),
+        "gentle_pause": ("fort", "sofa", "chair", "sheet", "cushions", "mixing bowl", "wooden spoon", "blueberries", "flour", "books", "flowers", "window", "path"),
     }
     for preferred in preferred_groups.get(role, ()):
         for candidate in candidates:
@@ -583,6 +600,12 @@ def _rewrite_visual_action(
                 return f"{lead_name} and {others_text} are actively mixing ingredients at the kitchen table beside the {anchor_prop}"
             return f"{pair_text} are actively mixing ingredients at the kitchen table beside the {anchor_prop}"
         return f"{full_group_text} stay clearly inside the kitchen beside the {anchor_prop} while the page action unfolds"
+    if "living room" in location.casefold():
+        if any(token in lowered for token in {"fort", "forts", "blanket fort", "pillow fort", "den", "sheet", "sofa", "couch"}):
+            if others_text:
+                return f"{lead_name} and {others_text} are actively building and playing in a homemade fort in the living room beside the {anchor_prop}"
+            return f"{pair_text} are actively building and playing in a homemade fort in the living room beside the {anchor_prop}"
+        return f"{full_group_text} stay clearly inside the living room beside the {anchor_prop} while the page action unfolds"
     if "reading nook" in location.casefold():
         if others_text:
             return f"{lead_name} and {others_text} are gathered in the reading nook with books and cushions clearly around them"
@@ -718,6 +741,8 @@ def _lighting_note(*, location: str, mood: str, characters: list[str], beat: Ill
     parts: list[str] = []
     if "bedroom" in lowered_location or "window" in lowered_location or "house" in lowered_location:
         parts.append("warm bedside lamp glow with soft blue moonlight through the window")
+    elif "living room" in lowered_location:
+        parts.append("warm indoor family-room light with clear cozy evening visibility, not bedroom lighting")
     elif "garden" in lowered_location or "pond" in lowered_location or "meadow" in lowered_location:
         parts.append("soft moonlight with gentle glow on flowers and grass")
     else:
