@@ -3,7 +3,7 @@ from typing import TypeVar
 
 from sqlmodel import Session, select  # noqa: F401 - select used in delete_workflow_record
 
-from app.models import AutomationSchedule, Book, BookAudio, Illustration, StoryDraft, StoryIdea, StoryPage, WorkflowJob
+from app.models import AutomationSchedule, Book, BookAudio, Illustration, StoryDraft, StoryIdea, StoryPage, StorySuggestion, WorkflowJob
 from app.services.review_service import utc_now
 from app.schemas.admin_schema import AdminIllustrationSummary, AdminNextActionItem, PipelineCountsResponse
 
@@ -105,6 +105,7 @@ def delete_workflow_record(
         StoryPage,
         StoryPageVersion,
         StoryQualityReview,
+        StorySuggestion,
         StoryReviewQueue,
         SupportTicket,
         TranslationTask,
@@ -200,6 +201,12 @@ def delete_workflow_record(
     if idea_id is not None:
         idea = session.get(StoryIdea, idea_id)
         if idea is not None:
+            for suggestion in session.exec(
+                select(StorySuggestion).where(StorySuggestion.promoted_story_idea_id == idea_id)
+            ).all():
+                suggestion.promoted_story_idea_id = None
+                suggestion.updated_at = utc_now()
+                session.add(suggestion)
             for b in session.exec(select(StoryBrief).where(StoryBrief.story_idea_id == idea_id)).all():
                 session.delete(b)
             session.delete(idea)
