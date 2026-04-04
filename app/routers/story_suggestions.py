@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlmodel import Session, select
 
 from app.database import get_session
+from app.config import STORY_GENERATION_API_KEY, STORY_IDEA_GENERATION_USE_LLM, STORY_GENERATION_MODEL
 from app.middleware.request_context import get_request_id_from_request
 from app.models import ChildProfile, StoryIdea, StorySuggestion, User
 from app.schemas.story_suggestion_schema import (
@@ -95,6 +96,21 @@ def _derive_story_idea_title(suggestion: StorySuggestion) -> str:
     return f"{shortened or trimmed[:77].strip()}..."
 
 
+def _replace_child_name(text: str | None, *, child_profile: ChildProfile | None, replacement: str) -> str:
+    if not text:
+        return ""
+    result = text.strip()
+    child_name = (child_profile.display_name if child_profile is not None else "").strip()
+    if not child_name:
+        return result
+    if child_name in CANONICAL_CHARACTER_ORDER:
+        return result
+    parts = [part for part in child_name.split() if part.strip()]
+    for part in sorted(parts, key=len, reverse=True):
+        result = result.replace(part, replacement).replace(part.lower(), replacement).replace(part.title(), replacement)
+    return result
+
+
 def _build_promoted_story_idea(
     session: Session,
     *,
@@ -104,12 +120,21 @@ def _build_promoted_story_idea(
     lane = validate_content_lane_key(session, age_band=suggestion.age_band, content_lane_key=None)
     resolved_tone = "warm, grounded, child-led"
     mode = STANDARD_MODE if lane.key == STORY_ADVENTURES_3_7_LANE_KEY else BEDTIME_MODE
+    sanitized_title = _replace_child_name(suggestion.title, child_profile=child_profile, replacement="the child") or None
+    sanitized_brief = _replace_child_name(suggestion.brief, child_profile=child_profile, replacement="the child")
+    sanitized_goal = _replace_child_name(suggestion.desired_outcome, child_profile=child_profile, replacement="the child") or None
+    sanitized_inspiration = _replace_child_name(
+        suggestion.inspiration_notes,
+        child_profile=child_profile,
+        replacement="the child",
+    ) or None
+    sanitized_avoid = _replace_child_name(suggestion.avoid_notes, child_profile=child_profile, replacement="the child") or None
     llm_payload = try_normalize_parent_suggestion_to_idea_payload(
-        title=suggestion.title,
-        brief=suggestion.brief,
-        desired_outcome=suggestion.desired_outcome,
-        inspiration_notes=suggestion.inspiration_notes,
-        avoid_notes=suggestion.avoid_notes,
+        title=sanitized_title,
+        brief=sanitized_brief,
+        desired_outcome=sanitized_goal,
+        inspiration_notes=sanitized_inspiration,
+        avoid_notes=sanitized_avoid,
         age_band=lane.age_band,
         content_lane_key=lane.key,
         resolved_tone=resolved_tone,
@@ -118,11 +143,16 @@ def _build_promoted_story_idea(
     )
     if llm_payload is not None:
         return StoryIdea(**llm_payload)
+    if STORY_IDEA_GENERATION_USE_LLM and STORY_GENERATION_API_KEY.strip() and STORY_GENERATION_MODEL.strip():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Suggestion normalization is temporarily unavailable. Please try promoting again in a moment.",
+        )
 
-    goal = (suggestion.desired_outcome or "").strip()
-    include_notes = (suggestion.inspiration_notes or "").strip()
+    goal = (sanitized_goal or "").strip()
+    include_notes = (sanitized_inspiration or "").strip()
     combined_notes = " ".join(
-        part for part in [suggestion.brief.strip(), include_notes, (suggestion.avoid_notes or "").strip(), goal] if part
+        part for part in [sanitized_brief.strip(), include_notes, (sanitized_avoid or "").strip(), goal] if part
     ).casefold()
 
     if "shortcut" in combined_notes or "quicker way" in combined_notes or "quick way" in combined_notes:
@@ -182,7 +212,7 @@ def _build_promoted_story_idea(
 
     return StoryIdea(
         title=_derive_story_idea_title(suggestion),
-        premise=suggestion.brief.strip(),
+        premise=sanitized_brief.strip(),
         hook_type=hook_type,
         age_band=lane.age_band,
         content_lane_key=lane.key,
@@ -331,11 +361,11 @@ def promote_story_suggestion_to_idea(
 ) -> StorySuggestionAdminRead:
     suggestion = _get_story_suggestion_or_404(session, suggestion_id)
     existing_idea = session.get(StoryIdea, suggestion.promoted_story_idea_id) if suggestion.promoted_story_idea_id else None
+    if existing_idea is not None and existing_idea.status != "idea_pending":
+        return _build_admin_read(session, suggestion)
     child_profile = session.get(ChildProfile, suggestion.child_profile_id) if suggestion.child_profile_id else None
     refreshed_story_idea = _build_promoted_story_idea(session, suggestion=suggestion, child_profile=child_profile)
     if existing_idea is not None:
-        if existing_idea.status != "idea_pending":
-            return _build_admin_read(session, suggestion)
         for field_name in (
             "title",
             "premise",
