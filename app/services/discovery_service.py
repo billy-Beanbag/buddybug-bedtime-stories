@@ -143,6 +143,8 @@ def _derive_setting_tags(story_idea: StoryIdea | None, story_pages: list[StoryPa
 
 def _derive_style_tags(book: Book, story_idea: StoryIdea | None, draft: StoryDraft | None) -> str | None:
     values: list[str] = []
+    if book.is_classic:
+        values.extend(["classic", "storybook"])
     if book.content_lane_key == BEDTIME_3_7_LANE_KEY:
         values.append("calming")
         values.append("bedtime")
@@ -401,7 +403,7 @@ def _search_candidates(
     limit: int | None = None,
 ) -> list[Book]:
     if published_only:
-        return get_published_books(session, age_band=None, content_lane_key=None, language=None, limit=limit or 500)
+        return get_published_books(session, age_band=None, content_lane_key=None, is_classic=None, language=None, limit=limit or 500)
     statement = select(Book).order_by(Book.updated_at.desc())
     if limit is not None:
         statement = statement.limit(limit)

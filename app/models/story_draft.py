@@ -13,10 +13,12 @@ class StoryDraft(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     story_idea_id: int | None = Field(default=None, foreign_key="storyidea.id", index=True)
     project_id: int | None = Field(default=None, foreign_key="editorialproject.id", index=True)
+    classic_source_id: int | None = Field(default=None, foreign_key="classicsource.id", index=True)
     title: str = Field(index=True)
     age_band: str = Field(default="3-7", index=True)
     language: str = "en"
     content_lane_key: str | None = Field(default="bedtime_3_7", index=True)
+    is_classic: bool = Field(default=False, index=True)
     full_text: str
     summary: str
     read_time_minutes: int

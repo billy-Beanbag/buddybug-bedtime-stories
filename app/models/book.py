@@ -16,6 +16,8 @@ class Book(SQLModel, table=True):
     cover_image_url: str | None = None
     age_band: str
     content_lane_key: str | None = Field(default="bedtime_3_7", index=True)
+    classic_source_id: int | None = Field(default=None, foreign_key="classicsource.id", index=True)
+    is_classic: bool = Field(default=False, index=True)
     language: str = "en"
     published: bool = False
     publication_status: str = Field(default="ready")

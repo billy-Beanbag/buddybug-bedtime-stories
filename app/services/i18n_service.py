@@ -197,6 +197,7 @@ def get_localized_book_detail(
         cover_image_url=book.cover_image_url,
         age_band=book.age_band,
         content_lane_key=book.content_lane_key,
+        is_classic=book.is_classic,
         published=book.published,
         publication_status=book.publication_status,
         pages=localized_pages,
@@ -389,6 +390,7 @@ def build_localized_book_summaries(
                 cover_image_url=book.cover_image_url,
                 age_band=book.age_band,
                 content_lane_key=book.content_lane_key,
+                is_classic=book.is_classic,
                 language=resolve_book_language(
                     book,
                     requested_language=normalized_language,

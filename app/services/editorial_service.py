@@ -25,7 +25,7 @@ EDITORIAL_PROJECT_STATUSES = {
     "published",
     "archived",
 }
-EDITORIAL_SOURCE_TYPES = {"ai_generated", "curated_premise", "llm_generated_idea", "manual", "mixed"}
+EDITORIAL_SOURCE_TYPES = {"ai_generated", "classic_adaptation", "curated_premise", "llm_generated_idea", "manual", "mixed"}
 EDITORIAL_ASSET_TYPES = {"cover_image", "page_image", "manuscript_file", "reference_image"}
 
 
@@ -574,6 +574,8 @@ def build_preview_book(session: Session, *, draft: StoryDraft) -> tuple[Book, li
             title=draft.title,
             age_band=draft.age_band,
             content_lane_key=draft.content_lane_key,
+            classic_source_id=draft.classic_source_id,
+            is_classic=draft.is_classic,
             language=draft.language,
             published=False,
             publication_status="ready",
@@ -585,6 +587,8 @@ def build_preview_book(session: Session, *, draft: StoryDraft) -> tuple[Book, li
         preview_book.title = draft.title
         preview_book.age_band = draft.age_band
         preview_book.content_lane_key = draft.content_lane_key
+        preview_book.classic_source_id = draft.classic_source_id
+        preview_book.is_classic = draft.is_classic
         preview_book.language = draft.language
         preview_book.published = False
         preview_book.publication_status = "ready"

@@ -22,9 +22,10 @@ import type { RecommendationsResponse, RecommendedBookScore, ReaderBookSummary }
 
 const BEDTIME_LANE = "bedtime_3_7";
 const ADVENTURE_LANE = "story_adventures_3_7";
+const CLASSIC_ROUTE = "classic";
 const LIBRARY_ROUTE_STORAGE_KEY = "buddybug.library-route";
 
-type LibraryRouteFilter = "all" | typeof BEDTIME_LANE | typeof ADVENTURE_LANE;
+type LibraryRouteFilter = "all" | typeof BEDTIME_LANE | typeof ADVENTURE_LANE | typeof CLASSIC_ROUTE;
 
 const LIBRARY_ROUTE_OPTIONS: Array<{
   key: LibraryRouteFilter;
@@ -34,6 +35,7 @@ const LIBRARY_ROUTE_OPTIONS: Array<{
   { key: "all", label: "All stories", description: "Show every published 3-7 story in this view." },
   { key: BEDTIME_LANE, label: "Bedtime stories", description: "Calm, cosy stories for winding down." },
   { key: ADVENTURE_LANE, label: "Adventure stories", description: "Playful, plot-led stories with more energy." },
+  { key: CLASSIC_ROUTE, label: "Classics", description: "Public-domain favourites with light Buddybug cameo magic." },
 ];
 
 function readStoredLibraryRoute(): LibraryRouteFilter {
@@ -41,7 +43,7 @@ function readStoredLibraryRoute(): LibraryRouteFilter {
     return "all";
   }
   const stored = window.localStorage.getItem(LIBRARY_ROUTE_STORAGE_KEY);
-  if (stored === BEDTIME_LANE || stored === ADVENTURE_LANE || stored === "all") {
+  if (stored === BEDTIME_LANE || stored === ADVENTURE_LANE || stored === CLASSIC_ROUTE || stored === "all") {
     return stored;
   }
   return "all";
@@ -54,8 +56,18 @@ function persistLibraryRoute(route: LibraryRouteFilter) {
   window.localStorage.setItem(LIBRARY_ROUTE_STORAGE_KEY, route);
 }
 
-function matchesRoute(route: LibraryRouteFilter, laneKey: string | null | undefined) {
-  return route === "all" || laneKey === route;
+function matchesRoute(
+  route: LibraryRouteFilter,
+  laneKey: string | null | undefined,
+  isClassic: boolean | null | undefined,
+) {
+  if (route === "all") {
+    return true;
+  }
+  if (route === CLASSIC_ROUTE) {
+    return Boolean(isClassic);
+  }
+  return laneKey === route;
 }
 
 export default function LibraryPage() {
@@ -82,7 +94,7 @@ export default function LibraryPage() {
         ? (["all", "3-7", "8-12"] as const)
         : (["all", "3-7"] as const);
   const routeFilteredRecommended = useMemo(
-    () => recommended.filter((item) => matchesRoute(selectedRoute, item.content_lane_key)),
+    () => recommended.filter((item) => matchesRoute(selectedRoute, item.content_lane_key, item.is_classic)),
     [recommended, selectedRoute],
   );
 
@@ -137,7 +149,9 @@ export default function LibraryPage() {
             query: {
               language: effectiveLanguage,
               age_band: effectiveAgeBand,
-              content_lane_key: selectedRoute === "all" ? undefined : selectedRoute,
+              content_lane_key:
+                selectedRoute === "all" || selectedRoute === CLASSIC_ROUTE ? undefined : selectedRoute,
+              is_classic: selectedRoute === CLASSIC_ROUTE ? true : undefined,
               // Backend requires auth when `child_profile_id` is provided.
               child_profile_id: childProfileIdForRequest,
             },
@@ -209,6 +223,8 @@ export default function LibraryPage() {
       ? "No bedtime stories are published yet for this view."
       : selectedRoute === ADVENTURE_LANE
         ? "No adventure stories are published yet for this view."
+        : selectedRoute === CLASSIC_ROUTE
+          ? "No published classics are available yet for this view."
         : selectedAgeBand === "all"
           ? selectedChildProfile
             ? `No published stories are available yet for ${selectedChildProfile.display_name}.`
@@ -249,7 +265,7 @@ export default function LibraryPage() {
         </div>
         <div className="mt-5">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Choose your story route</p>
-          <div className="mt-3 grid gap-2 sm:grid-cols-3">
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {LIBRARY_ROUTE_OPTIONS.map((route) => (
               <button
                 key={route.key}
@@ -275,10 +291,18 @@ export default function LibraryPage() {
         <section className="space-y-3">
           <div>
             <h2 className="text-2xl font-semibold text-slate-900">
-              {selectedRoute === ADVENTURE_LANE ? "Adventure pick" : isAuthenticated ? "Start here" : "Tonight's pick"}
+              {selectedRoute === CLASSIC_ROUTE
+                ? "Classic pick"
+                : selectedRoute === ADVENTURE_LANE
+                  ? "Adventure pick"
+                  : isAuthenticated
+                    ? "Start here"
+                    : "Tonight's pick"}
             </h2>
             <p className="mt-1 text-sm text-slate-600">
-              {selectedRoute === ADVENTURE_LANE
+              {selectedRoute === CLASSIC_ROUTE
+                ? "A familiar classic, adapted gently for the Buddybug library."
+                : selectedRoute === ADVENTURE_LANE
                 ? "A story with a little more energy for today's reading session."
                 : isAuthenticated
                   ? "One simple recommendation to get bedtime started."

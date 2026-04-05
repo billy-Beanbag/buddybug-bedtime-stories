@@ -12,6 +12,7 @@ type AdminLink = { href: string; label: string; flagKey?: string };
 const primaryAdminLinks: AdminLink[] = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/workflow", label: "Workflow" },
+  { href: "/admin/classics", label: "Classics" },
   { href: "/admin/ideas", label: "Ideas" },
   { href: "/admin/story-suggestions", label: "Suggestions" },
   { href: "/admin/drafts", label: "Drafts" },

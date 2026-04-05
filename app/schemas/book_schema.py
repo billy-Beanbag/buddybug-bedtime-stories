@@ -10,6 +10,8 @@ class BookCreate(SQLModel):
     cover_image_url: str | None = None
     age_band: str = "3-7"
     content_lane_key: str | None = "bedtime_3_7"
+    classic_source_id: int | None = None
+    is_classic: bool = False
     language: str = "en"
     published: bool = False
     publication_status: str = "ready"
@@ -30,6 +32,8 @@ class BookUpdate(SQLModel):
     cover_image_url: str | None = None
     age_band: str | None = None
     content_lane_key: str | None = None
+    classic_source_id: int | None = None
+    is_classic: bool | None = None
     language: str | None = None
     published: bool | None = None
     publication_status: str | None = None

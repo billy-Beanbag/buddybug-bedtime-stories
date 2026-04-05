@@ -66,6 +66,7 @@ def _is_book_allowed_for_reader(book, *, controls) -> bool:
 def list_reader_books(
     age_band: str | None = Query(default=None),
     content_lane_key: str | None = Query(default=None),
+    is_classic: bool | None = Query(default=None),
     language: str | None = Query(default=None),
     child_profile_id: int | None = Query(default=None),
     limit: int = Query(default=100, ge=1, le=300),
@@ -88,6 +89,7 @@ def list_reader_books(
         session,
         age_band=effective_age_band,
         content_lane_key=content_lane_key,
+        is_classic=is_classic,
         language=None,
         limit=limit,
     )

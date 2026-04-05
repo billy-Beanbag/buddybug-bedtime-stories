@@ -55,6 +55,11 @@ export function BookCard({
               <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-medium text-slate-700">
                 {book.age_band}
               </span>
+              {book.is_classic ? (
+                <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-medium text-amber-800">
+                  Classic
+                </span>
+              ) : null}
               {statusLabel ? (
                 <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">
                   {statusLabel}

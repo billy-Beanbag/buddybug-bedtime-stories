@@ -58,6 +58,7 @@ class LocalizedReaderBookDetail(BaseModel):
     cover_image_url: str | None = None
     age_band: str
     content_lane_key: str | None = None
+    is_classic: bool = False
     published: bool
     publication_status: str
     pages: list[ReaderPageRead]

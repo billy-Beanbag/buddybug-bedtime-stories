@@ -45,6 +45,7 @@ from app.routers.characters import router as characters_router
 from app.routers.changelog import admin_router as changelog_admin_router, router as changelog_router
 from app.routers.child_comfort import router as child_comfort_router
 from app.routers.child_profiles import router as child_profiles_router
+from app.routers.classics import router as classics_router
 from app.routers.content_lanes import router as content_lanes_router
 from app.routers.content_versions import router as content_versions_router
 from app.routers.discovery import admin_router as discovery_admin_router, router as discovery_router
@@ -205,6 +206,7 @@ app.include_router(changelog_router)
 app.include_router(changelog_admin_router)
 app.include_router(child_comfort_router)
 app.include_router(child_profiles_router)
+app.include_router(classics_router)
 app.include_router(content_lanes_router)
 app.include_router(content_versions_router)
 app.include_router(discovery_router)

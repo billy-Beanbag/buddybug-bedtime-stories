@@ -23,6 +23,7 @@ export interface ReaderBookSummary {
   cover_image_url: string | null;
   age_band: string;
   content_lane_key?: string | null;
+  is_classic?: boolean;
   language: string;
   published: boolean;
   publication_status: string;
@@ -126,6 +127,7 @@ export interface ReaderBookDetail {
   cover_image_url: string | null;
   age_band: string;
   content_lane_key?: string | null;
+  is_classic?: boolean;
   language: string;
   published: boolean;
   publication_status: string;
@@ -139,6 +141,7 @@ export interface LocalizedReaderBookDetail {
   cover_image_url: string | null;
   age_band: string;
   content_lane_key?: string | null;
+  is_classic?: boolean;
   published: boolean;
   publication_status: string;
   pages: ReaderPageRead[];
@@ -806,6 +809,7 @@ export interface RecommendedBookScore {
   cover_image_url: string | null;
   age_band: string;
   content_lane_key?: string | null;
+  is_classic?: boolean;
   language: string;
   published: boolean;
   publication_status: string;
@@ -1798,10 +1802,12 @@ export interface EditorialStoryDraftRead {
   id: number;
   story_idea_id: number | null;
   project_id: number | null;
+  classic_source_id?: number | null;
   title: string;
   age_band: string;
   language: string;
   content_lane_key: string | null;
+  is_classic?: boolean;
   full_text: string;
   summary: string;
   read_time_minutes: number;
@@ -1877,6 +1883,67 @@ export interface PreviewBookResponse {
   book: AdminBookSummary;
   pages: ReaderPageRead[];
   preview_only: boolean;
+}
+
+export interface ClassicSourceRead {
+  id: number;
+  title: string;
+  source_text: string;
+  source_url: string;
+  public_domain_verified: boolean;
+  source_author: string | null;
+  source_origin_notes: string | null;
+  import_status: string;
+  created_by_user_id: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ClassicAdaptationDraftRead {
+  id: number;
+  classic_source_id: number;
+  project_id: number | null;
+  story_draft_id: number | null;
+  preview_book_id: number | null;
+  adapted_title: string;
+  adapted_text: string;
+  adaptation_intensity: string;
+  adaptation_notes: string | null;
+  cameo_insertions_summary: string | null;
+  scene_seed_notes_json: string | null;
+  page_scene_data_json: string | null;
+  validation_status: string;
+  validation_warnings_json: string | null;
+  illustration_status: string;
+  review_status: string;
+  editor_notes: string | null;
+  created_by_user_id: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ClassicDraftBundleResponse {
+  source: ClassicSourceRead;
+  adaptation: ClassicAdaptationDraftRead;
+  story_draft: EditorialStoryDraftRead | null;
+  story_pages: EditorialStoryPageRead[];
+  preview_book: AdminBookSummary | null;
+  preview_pages: ReaderPageRead[];
+}
+
+export interface ClassicIllustrationGenerationResponse {
+  classic_adaptation_draft_id: number;
+  story_draft_id: number;
+  generated_count: number;
+  illustration_ids: number[];
+  page_ids: number[];
+  provider: string;
+}
+
+export interface ClassicPublishResponse {
+  source: ClassicSourceRead;
+  adaptation: ClassicAdaptationDraftRead;
+  book: AdminBookSummary;
 }
 
 export interface QualityCheckRead {
@@ -2113,6 +2180,8 @@ export interface AdminBookSummary {
   age_band: string;
   language: string;
   content_lane_key?: string | null;
+  classic_source_id?: number | null;
+  is_classic?: boolean;
   publication_status: string;
   published: boolean;
   audio_available: boolean;

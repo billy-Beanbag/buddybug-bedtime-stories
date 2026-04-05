@@ -60,9 +60,11 @@ def ensure_sqlite_schema_compatibility() -> list[str]:
         ],
         "storydraft": [
             ("project_id", "INTEGER"),
+            ("classic_source_id", "INTEGER"),
             ("age_band", "TEXT NOT NULL DEFAULT '3-7'"),
             ("language", "TEXT NOT NULL DEFAULT 'en'"),
             ("content_lane_key", "TEXT DEFAULT 'bedtime_3_7'"),
+            ("is_classic", "BOOLEAN NOT NULL DEFAULT 0"),
             ("generation_source", "TEXT NOT NULL DEFAULT 'manual'"),
         ],
         "storyidea": [
@@ -75,6 +77,14 @@ def ensure_sqlite_schema_compatibility() -> list[str]:
         ],
         "book": [
             ("content_lane_key", "TEXT DEFAULT 'bedtime_3_7'"),
+            ("classic_source_id", "INTEGER"),
+            ("is_classic", "BOOLEAN NOT NULL DEFAULT 0"),
+        ],
+        "classicadaptationdraft": [
+            ("adaptation_intensity", "TEXT NOT NULL DEFAULT 'light'"),
+            ("scene_seed_notes_json", "TEXT"),
+            ("validation_status", "TEXT NOT NULL DEFAULT 'accepted'"),
+            ("validation_warnings_json", "TEXT"),
         ],
         "user": [
             ("is_editor", "BOOLEAN NOT NULL DEFAULT 0"),
@@ -199,6 +209,10 @@ def ensure_sqlite_schema_compatibility() -> list[str]:
                 cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_sql}")
                 applied_changes.append(f"{table_name}.{column_name}")
         connection.commit()
+    # Local SQLite databases often lag behind newly added models.
+    # Create any fully missing tables after additive column fixes so admin-only
+    # features like classics can boot locally without a manual migration step.
+    SQLModel.metadata.create_all(engine)
     return applied_changes
 
 

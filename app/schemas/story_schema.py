@@ -100,10 +100,12 @@ class StoryIdeaSelectRequest(SQLModel):
 class StoryDraftCreate(SQLModel):
     story_idea_id: int | None = None
     project_id: int | None = None
+    classic_source_id: int | None = None
     title: str
     age_band: str = "3-7"
     language: str = "en"
     content_lane_key: str | None = "bedtime_3_7"
+    is_classic: bool = False
     full_text: str
     summary: str
     read_time_minutes: int
@@ -124,10 +126,12 @@ class StoryDraftRead(StoryDraftCreate):
 class StoryDraftUpdate(SQLModel):
     story_idea_id: int | None = None
     project_id: int | None = None
+    classic_source_id: int | None = None
     title: str | None = None
     age_band: str | None = None
     language: str | None = None
     content_lane_key: str | None = None
+    is_classic: bool | None = None
     full_text: str | None = None
     summary: str | None = None
     read_time_minutes: int | None = None

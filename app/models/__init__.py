@@ -23,6 +23,8 @@ from app.models.changelog_entry import ChangelogEntry
 from app.models.daily_story_suggestion import DailyStorySuggestion
 from app.models.data_request import DataRequest
 from app.models.child_comfort_profile import ChildComfortProfile
+from app.models.classic_adaptation_draft import ClassicAdaptationDraft
+from app.models.classic_source import ClassicSource
 from app.models.editorial_asset import EditorialAsset
 from app.models.editorial_project import EditorialProject
 from app.models.earned_achievement import EarnedAchievement
@@ -116,6 +118,8 @@ __all__ = [
     "BookTranslation",
     "Character",
     "ChangelogEntry",
+    "ClassicAdaptationDraft",
+    "ClassicSource",
     "DailyStorySuggestion",
     "DataRequest",
     "ChildComfortProfile",

@@ -355,6 +355,8 @@ def assemble_book_from_draft(
         cover_image_url=cover_image_url,
         age_band=age_band,
         content_lane_key=resolved_content_lane_key,
+        classic_source_id=story_draft.classic_source_id,
+        is_classic=story_draft.is_classic,
         language=language or story_draft.language,
         published=publish_immediately,
         publication_status=publication_status,

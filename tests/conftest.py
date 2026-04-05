@@ -10,7 +10,9 @@ from app.database import get_session
 from app.middleware.rate_limit import rate_limiter
 from app.main import app
 import app.config as app_config
+import app.services.classic_adaptation_service as classic_adaptation_service
 import app.services.illustration_generation_service as illustration_generation_service
+import app.services.illustration_generator as illustration_generator
 import app.services.story_generation_service as story_generation_service
 import app.services.story_idea_llm as story_idea_llm
 import app.services.story_writer as story_writer_service
@@ -73,6 +75,9 @@ def force_test_generation_modes(monkeypatch: pytest.MonkeyPatch):
 
     monkeypatch.setattr(illustration_generation_service, "ILLUSTRATION_GENERATION_API_KEY", "")
     monkeypatch.setattr(illustration_generation_service, "ILLUSTRATION_GENERATION_MODEL", "")
+    monkeypatch.setattr(illustration_generator, "ILLUSTRATION_GENERATION_PROVIDER", "mock")
+    monkeypatch.setattr(classic_adaptation_service, "STORY_GENERATION_API_KEY", "")
+    monkeypatch.setattr(classic_adaptation_service, "STORY_GENERATION_MODEL", "")
     monkeypatch.setattr(story_generation_service, "STORY_GENERATION_API_KEY", "")
     monkeypatch.setattr(story_generation_service, "STORY_GENERATION_MODEL", "")
     monkeypatch.setattr(story_idea_llm, "STORY_GENERATION_API_KEY", "")

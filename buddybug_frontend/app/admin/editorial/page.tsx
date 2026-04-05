@@ -98,6 +98,7 @@ export default function AdminEditorialPage() {
             <option value="manual">manual</option>
             <option value="mixed">mixed</option>
             <option value="ai_generated">ai_generated</option>
+            <option value="classic_adaptation">classic_adaptation</option>
             <option value="curated_premise">curated_premise</option>
             <option value="llm_generated_idea">llm_generated_idea</option>
             <option value="parent_suggestion">parent_suggestion</option>

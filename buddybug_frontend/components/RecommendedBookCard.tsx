@@ -40,9 +40,16 @@ export function RecommendedBookCard({
       <div className="relative">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium tracking-[0.12em] text-indigo-100">
-              Recommended tonight
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium tracking-[0.12em] text-indigo-100">
+                Recommended tonight
+              </span>
+              {item.is_classic ? (
+                <span className="inline-flex rounded-full border border-amber-200/50 bg-amber-100/10 px-3 py-1 text-xs font-medium tracking-[0.08em] text-amber-100">
+                  Classic
+                </span>
+              ) : null}
+            </div>
             <h3 className="mt-4 text-2xl font-semibold leading-tight text-white">{item.title}</h3>
             <p className="mt-3 max-w-xl text-sm text-indigo-100/90">
               {reasonPrefix ? `${reasonPrefix} ${primaryReason}` : primaryReason}
@@ -65,7 +72,9 @@ export function RecommendedBookCard({
           </div>
           <div className="min-w-0 flex-1 rounded-[1.5rem] border border-white/10 bg-white/10 p-4">
             <p className="text-sm text-indigo-100/95">
-              A calming Buddybug story chosen to make tonight&apos;s reading feel easy, gentle, and ready to start.
+              {item.is_classic
+                ? "A familiar classic, kept recognisable and softened with just a little Buddybug cameo magic."
+                : "A calming Buddybug story chosen to make tonight&apos;s reading feel easy, gentle, and ready to start."}
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-white/90">
               <span className="rounded-full border border-white/10 bg-white/10 px-3 py-1">Tonight's featured pick</span>

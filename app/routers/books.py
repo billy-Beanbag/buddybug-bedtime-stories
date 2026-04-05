@@ -56,6 +56,7 @@ def list_books(
     story_draft_id: int | None = Query(default=None),
     age_band: str | None = Query(default=None),
     content_lane_key: str | None = Query(default=None),
+    is_classic: bool | None = Query(default=None),
     limit: int = Query(default=100, ge=1, le=300),
     session: Session = Depends(get_session),
 ) -> list[Book]:
@@ -71,6 +72,8 @@ def list_books(
         statement = statement.where(Book.age_band == age_band)
     if content_lane_key is not None:
         statement = statement.where(Book.content_lane_key == content_lane_key)
+    if is_classic is not None:
+        statement = statement.where(Book.is_classic == is_classic)
     return list(session.exec(statement).all())
 
 

@@ -30,6 +30,7 @@ def get_published_books(
     *,
     age_band: str | None,
     content_lane_key: str | None,
+    is_classic: bool | None,
     language: str | None,
     limit: int,
 ) -> list[Book]:
@@ -38,6 +39,8 @@ def get_published_books(
         statement = statement.where(Book.age_band == age_band)
     if content_lane_key:
         statement = statement.where(Book.content_lane_key == content_lane_key)
+    if is_classic is not None:
+        statement = statement.where(Book.is_classic == is_classic)
     if language:
         statement = statement.where(Book.language == language)
     return list(session.exec(statement).all())
