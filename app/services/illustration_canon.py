@@ -78,6 +78,12 @@ CHARACTER_VISUAL_CANON: dict[str, CharacterVisualCanon] = {
         ),
         accessories="no clothing or handheld items",
         scale_note="tiny flying guardian, clearly smaller than the dogs and used as a warm point of light",
+        must_not_show=(
+            "do not depict Buddybug as a ladybird",
+            "do not depict Buddybug as a ladybug",
+            "do not depict Buddybug as a beetle",
+            "do not remove Buddybug's tiny luminous wings",
+        ),
     ),
     "Glowmoth": CharacterVisualCanon(
         name="Glowmoth",

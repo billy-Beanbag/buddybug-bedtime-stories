@@ -162,6 +162,8 @@ def _parse_scene_seed_notes(scene_seed_notes_json: str | None) -> list[ClassicSc
 def _infer_classic_location(page_text: str, fallback: str | None = None) -> str:
     lowered = page_text.casefold()
     rules: list[tuple[str, tuple[str, ...]]] = [
+        ("palace gate in a storm", ("town-gate", "knocking", "storm", "rain streamed down")),
+        ("outside grandmother's cottage", ("grandmamma", "grandmother", "village", "wood", "wolf")),
         ("bears' forest cottage", ("bear", "porridge", "chair", "cottage", "little house")),
         ("woodland path", ("wolf", "woods", "wood", "path", "forest", "trail")),
         ("grandmother's cottage", ("grandmamma", "grandmother", "bobbin", "latch")),
@@ -198,12 +200,26 @@ def _infer_classic_mood(page_text: str, fallback: str | None = None) -> str:
     return "storybook calm"
 
 
+def _infer_classic_key_visual_action(page_text: str, fallback: str | None = None) -> str:
+    cleaned_text = re.sub(r"\s+", " ", page_text).strip()
+    if cleaned_text:
+        sentences = [part.strip() for part in re.split(r"(?<=[.!?])\s+", cleaned_text) if part.strip()]
+        if sentences:
+            return sentences[0][:220].rstrip()
+        return cleaned_text[:220].rstrip()
+    cleaned_fallback = (fallback or "").strip()
+    if cleaned_fallback:
+        return cleaned_fallback
+    return "preserve the clearest iconic action from this classic page"
+
+
 def _detect_classic_characters(page_text: str, fallback: str | None = None) -> list[str]:
     names = ["Buddybug", "Verity", "Daphne", "Dolly", "Twinklet", "Whisperwing", "Glowmoth"]
     found = [name for name in names if re.search(rf"\b{re.escape(name)}\b", page_text)]
     if found:
         return found
-    return [item.strip() for item in (fallback or "").split(",") if item.strip()]
+    fallback_names = [item.strip() for item in (fallback or "").split(",") if item.strip()]
+    return [item for item in fallback_names if item not in names]
 
 
 def _apply_classic_prompt_enhancer(
@@ -219,38 +235,21 @@ def _apply_classic_prompt_enhancer(
         note = notes_by_index.get(page_number)
         enhanced = dict(payload)
         page_text = str(payload.get("page_text") or "").strip()
-        location = (
-            note.setting
-            if note and note.setting.strip()
-            else _infer_classic_location(page_text, str(payload.get("location") or "").strip())
-        )
-        mood = (
-            note.mood
-            if note and note.mood.strip()
-            else _infer_classic_mood(page_text, str(payload.get("mood") or "").strip())
-        )
-        key_visual_action = (
-            note.keyVisualAction
-            if note and note.keyVisualAction.strip()
-            else page_text.split("\n", 1)[0].strip() or str(payload.get("scene_summary") or "").strip()
-        ) or "preserve the clearest iconic action from this classic page"
+        inferred_location = _infer_classic_location(page_text, str(payload.get("location") or "").strip())
+        inferred_mood = _infer_classic_mood(page_text, str(payload.get("mood") or "").strip())
+        inferred_action = _infer_classic_key_visual_action(page_text, str(payload.get("scene_summary") or "").strip())
+        location = inferred_location or (note.setting if note and note.setting.strip() else "classic story setting")
+        mood = inferred_mood or (note.mood if note and note.mood.strip() else "storybook calm")
+        key_visual_action = inferred_action
         scene_summary = (
-            f"{note.label} in {location} with a {mood} feeling: {key_visual_action}."
-            if note is not None
-            else f"Classic story scene in {location} with a {mood} feeling: {key_visual_action}."
+            f"Classic story scene in {location} with a {mood} feeling: {key_visual_action}."
         )
         characters_present = _detect_classic_characters(
             page_text,
-            ", ".join(note.featuredCharacters) if note and note.featuredCharacters else str(payload.get("characters_present") or ""),
+            str(payload.get("characters_present") or ""),
         )
-        if not characters_present and note and note.featuredCharacters:
-            characters_present = note.featuredCharacters
         if not characters_present:
-            characters_present = (
-                note.featuredCharacters
-                if note and note.featuredCharacters
-                else [item.strip() for item in str(payload.get("characters_present") or "").split(",") if item.strip()]
-            )
+            characters_present = [item.strip() for item in str(payload.get("characters_present") or "").split(",") if item.strip()]
         enhanced["location"] = location
         enhanced["mood"] = mood
         enhanced["scene_summary"] = scene_summary

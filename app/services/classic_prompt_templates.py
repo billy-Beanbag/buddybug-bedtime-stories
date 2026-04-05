@@ -58,6 +58,7 @@ from pydantic import BaseModel, Field
 from sqlmodel import Session, select
 
 from app.models import Character, ClassicSource
+from app.services.illustration_canon import build_character_visual_lines
 
 CLASSIC_ADAPTATION_INTENSITIES: dict[str, str] = {
     "minimal": (
@@ -347,10 +348,12 @@ def build_classic_illustration_prompt(
     clean_mood = re.sub(r"\s+", " ", mood).strip() or "storybook calm"
     clean_action = re.sub(r"\s+", " ", key_visual_action).strip() or "the clearest iconic action from this page"
     characters_text = ", ".join(characters_present) if characters_present else "original classic story characters only"
+    character_lines = build_character_visual_lines(characters_present)
 
     lines = [
         "Create one children's storybook illustration for a single Buddybug Classics page.",
         "Pick one main visual moment only. Do not try to show the whole story at once.",
+        "Render only what belongs to this exact page. Do not introduce future-page objects, reveals, or resolved story beats early.",
         f"Page number: {page_number}",
         f"Exact text: {page_text.strip()}",
         f"Scene summary: {scene_summary.strip()}",
@@ -365,6 +368,7 @@ def build_classic_illustration_prompt(
         "- Keep the Buddybug house art style, but make the actual story setting and action the priority.",
         "- Include Buddybug cameo characters only if they are truly present in this page text.",
         "- If no Buddybug cameo is present in this scene, do not add one visually.",
+        "- Keep Buddybug tiny, glowing, and secondary unless this exact page text makes Buddybug the clear focal witness.",
         "- Preserve fairytale and period-appropriate classic-story cues where relevant.",
         f"- Adaptation intensity for visual cameo restraint: {intensity}.",
         "Hard setting guardrails:",
@@ -373,15 +377,19 @@ def build_classic_illustration_prompt(
         "- Do not convert indoor classic scenes into a nursery, bedtime bedroom, or generic cozy room unless the source scene is actually a bedroom.",
         "- If the source scene is a bedroom, keep it as the classic story's own bedroom, not a default Buddybug room.",
         "- Keep props, architecture, clothing, and surroundings faithful to this classic scene.",
-        "Negative prompt: do not relocate the scene; do not use a generic bedtime room; do not use a generic magical garden; no text, captions, labels, watermarks, or readable writing inside the artwork.",
+        "- Do not depict objects or scene changes that are only introduced on the next page.",
+        "Negative prompt: do not relocate the scene; do not use a generic bedtime room; do not use a generic magical garden; do not show future-page props early; no text, captions, labels, watermarks, or readable writing inside the artwork.",
     ]
+    if character_lines:
+        lines.append("Character canon:")
+        lines.extend(character_lines)
     if scene_note is not None:
         lines.extend(
             [
                 f"Scene seed label: {scene_note.label}.",
                 f"Excerpt anchor: {scene_note.excerptAnchor}.",
                 f"Scene note setting: {scene_note.setting}.",
-                f"Scene note illustration guidance: {scene_note.illustrationNotes}.",
+                f"Scene note illustration guidance: {scene_note.illustrationNotes}. Use this only if it agrees with the exact page text.",
             ]
         )
     previous_excerpt = _classic_context_excerpt(previous_page_text)
@@ -389,7 +397,8 @@ def build_classic_illustration_prompt(
         lines.append(f"Previous page context: {previous_excerpt}")
     next_excerpt = _classic_context_excerpt(next_page_text)
     if next_excerpt:
-        lines.append(f"Next page context: {next_excerpt}")
+        lines.append(f"Next page continuity context only: {next_excerpt}")
+        lines.append("Do not depict any object, reveal, or action from that next-page context before it appears on this page.")
     return "\n".join(lines)
 
 
